@@ -1,12 +1,101 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Thrift Queue</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Okrika-Rack | Smarter Thrift Selling</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            background: #f7f5f0;
+            color: #20251f;
+            font-family: -apple-system, BlinkMacSystemFont,
+                         "Segoe UI", sans-serif;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 520px;
+            text-align: center;
+        }
+
+        .brand {
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: #62735a;
+        }
+
+        h1 {
+            margin: 20px 0 12px;
+            font-size: clamp(38px, 8vw, 58px);
+            letter-spacing: -2px;
+        }
+
+        .description {
+            max-width: 420px;
+            margin: 0 auto;
+            color: #697067;
+            line-height: 1.7;
+        }
+
+        .connect-button {
+            display: inline-block;
+            margin-top: 32px;
+            padding: 15px 28px;
+            border-radius: 8px;
+            background: #263b2d;
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
+            transition: background 0.2s ease;
+        }
+
+        .connect-button:hover {
+            background: #3d5843;
+        }
+
+        .note {
+            margin-top: 18px;
+            font-size: 12px;
+            color: #858b82;
+        }
+    </style>
 </head>
+
 <body>
-  <h1>Thrift Queue</h1>
-  <p>The app is running.</p>
+    <main class="container">
+        <div class="brand">Okrika-Rack</div>
+
+        <h1>Sell smarter.<br>Stay in stock.</h1>
+
+        <p class="description">
+            Manage your thrift inventory and keep your social
+            media publishing schedule aligned with what's
+            actually available to sell.
+        </p>
+
+        <a href="{{ url_for('auth.connect_buffer') }}"
+           class="connect-button">
+            Connect Buffer
+        </a>
+
+        <p class="note">
+            Secure connection powered by Buffer OAuth.
+        </p>
+    </main>
 </body>
 </html>

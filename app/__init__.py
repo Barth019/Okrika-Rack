@@ -3,21 +3,29 @@ from flask import Flask, render_template
 
 from app.config import Config
 from app.models import db
+from app.auth import auth_bp
 
 
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
 
-    # Connect SQLAlchemy to this Flask application.
+    # Configure secure session cookies.
+    app.config["SESSION_COOKIE_HTTPONLY"] = True
+    app.config["SESSION_COOKIE_SECURE"] = True
+    app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+
+    # Initialize the database.
     db.init_app(app)
 
-    # Register the homepage.
+    # Register authentication routes.
+    app.register_blueprint(auth_bp)
+
     @app.route("/")
     def home():
         return render_template("index.html")
 
-    # Create any database tables that do not already exist.
+    # Create database tables if they do not exist.
     with app.app_context():
         db.create_all()
 
