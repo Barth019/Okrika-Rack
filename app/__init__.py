@@ -1,8 +1,7 @@
-
 from flask import Flask, render_template
 
 from app.config import Config
-from app.models import db
+from app.models import db, BufferConnection
 from app.auth import auth_bp
 
 
@@ -23,7 +22,14 @@ def create_app():
 
     @app.route("/")
     def home():
-        return render_template("index.html")
+        buffer_connection = BufferConnection.query.order_by(
+            BufferConnection.updated_at.desc()
+        ).first()
+
+        return render_template(
+            "index.html",
+            buffer_connection=buffer_connection
+        )
 
     # Create database tables if they do not exist.
     with app.app_context():
