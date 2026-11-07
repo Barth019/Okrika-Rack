@@ -4,6 +4,7 @@ import hashlib
 import secrets
 from datetime import datetime, timedelta, timezone
 from urllib.parse import urlencode
+from flask_login import current_user, login_required
 
 from flask import (
     Blueprint,
@@ -65,6 +66,7 @@ def is_transaction_expired(transaction):
 
 
 @auth_bp.route("/connect/buffer")
+@login_required
 def connect_buffer():
     """Start the Buffer OAuth authorization process."""
 
@@ -72,6 +74,7 @@ def connect_buffer():
     verifier, challenge = generate_pkce_pair()
 
     transaction = OAuthTransaction(
+        seller_id=current_user.id,
         state=state,
         code_verifier_encrypted=encrypt_token(verifier),
         expires_at=datetime.now(timezone.utc) + timedelta(minutes=10),
@@ -119,13 +122,19 @@ def buffer_callback():
 
     if transaction is None:
         abort(400, description="OAuth transaction not found or already used.")
+            # Ensure the seller completing OAuth is the one who initiated it.
+    if not current_user.is_authenticated:
+        abort(401, description="Please log in before completing Buffer connection.")
+
+    if transaction.seller_id != current_user.id:
+        abort(403, description="This OAuth transaction belongs to another seller.")
 
     if is_transaction_expired(transaction):
         db.session.delete(transaction)
         db.session.commit()
         session.pop("buffer_oauth_state", None)
 
-        flash("Your Buffer connection request expired. Please try again.")
+        flash("Your Buffer connection request expired. Please try again.", "error")
         return redirect(url_for("home"))
 
     # Decrypt the verifier before consuming the transaction.
@@ -148,13 +157,13 @@ def buffer_callback():
     oauth_error = request.args.get("error")
 
     if oauth_error:
-        flash("Buffer authorization was cancelled or denied.")
+        flash("Buffer authorization was cancelled or denied.", "info")
         return redirect(url_for("home"))
 
     authorization_code = request.args.get("code")
 
     if not authorization_code:
-        flash("Buffer did not return an authorization code.")
+        flash("Buffer did not return an authorization code.", "error")
         return redirect(url_for("home"))
 
     try:
@@ -172,9 +181,23 @@ def buffer_callback():
 
         if connection is None:
             connection = BufferConnection(
+                seller_id=current_user.id,
                 buffer_account_id=account["id"],
             )
             db.session.add(connection)
+
+        elif (
+            connection.seller_id is not None
+            and connection.seller_id != current_user.id
+        ):
+            raise PermissionError(
+                "This Buffer account is already connected to another seller."
+            )
+
+        else:
+            # An existing unowned connection can be claimed only through
+            # this seller's authenticated Buffer authorization.
+            connection.seller_id = current_user.id
 
         connection.email = account["email"]
         connection.access_token_encrypted = encrypt_token(
@@ -196,7 +219,7 @@ def buffer_callback():
         current_app.logger.exception(
             "Buffer OAuth connection failed."
         )
-        flash("We couldn't connect your Buffer account. Please try again.")
+        flash("We couldn't connect your Buffer account. Please try again.", "error")
         return redirect(url_for("home"))
 
     except Exception:
@@ -204,8 +227,8 @@ def buffer_callback():
         current_app.logger.exception(
             "Unexpected error while saving Buffer connection."
         )
-        flash("Something went wrong while connecting Buffer.")
+        flash("Something went wrong while connecting Buffer.", "error")
         return redirect(url_for("home"))
 
-    flash("Your Buffer account is connected successfully!")
+    flash("Your Buffer account is connected successfully!", "success")
     return redirect(url_for("home"))

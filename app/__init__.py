@@ -1,38 +1,60 @@
 from flask import Flask, render_template
+from flask_login import LoginManager, current_user
+from flask_wtf.csrf import CSRFProtect
+from flask_migrate import Migrate
 
 from app.config import Config
-from app.models import db, BufferConnection
+from app.models import db, BufferConnection, Seller
 from app.auth import auth_bp
+from app.accounts import accounts_bp
+
+
+migrate = Migrate()
+login_manager = LoginManager()
+csrf = CSRFProtect()
 
 
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
 
-    # Configure secure session cookies.
+    # Secure session cookies.
     app.config["SESSION_COOKIE_HTTPONLY"] = True
     app.config["SESSION_COOKIE_SECURE"] = True
     app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 
-    # Initialize the database.
+    # Initialize extensions.
     db.init_app(app)
+    migrate.init_app(app, db)
+    login_manager.init_app(app)
+    csrf.init_app(app)
 
-    # Register authentication routes.
+    login_manager.login_view = "accounts.login"
+    login_manager.login_message = "Please log in to access that page."
+
+    @login_manager.user_loader
+    def load_seller(seller_id):
+        try:
+            return db.session.get(Seller, int(seller_id))
+        except (ValueError, TypeError):
+            return None
+
+    # Register application routes.
     app.register_blueprint(auth_bp)
+    app.register_blueprint(accounts_bp)
 
     @app.route("/")
     def home():
-        buffer_connection = BufferConnection.query.order_by(
-            BufferConnection.updated_at.desc()
-        ).first()
+        buffer_connection = None
+
+        if current_user.is_authenticated:
+            buffer_connection = BufferConnection.query.filter_by(
+                seller_id=current_user.id
+            ).first()
 
         return render_template(
             "index.html",
             buffer_connection=buffer_connection
         )
-
-    # Create database tables if they do not exist.
-    with app.app_context():
-        db.create_all()
 
     return app

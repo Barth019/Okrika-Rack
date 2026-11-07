@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Dashboard | Okrika-Rack</title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='css/style.css') }}"
+    >
+</head>
+
+<body>
+    <main class="container">
+
+        <div class="brand">Okrika-Rack</div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash-message flash-{{ category }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <h1>Your selling<br>workspace.</h1>
+
+        <p class="description">
+            Welcome back, {{ current_user.email }}.
+            Manage your thrift inventory and keep your
+            social media schedule aligned with available stock.
+        </p>
+
+        {% if buffer_connection %}
+
+            <div class="connection-status">
+                <strong>✓ Buffer Connected</strong>
+
+                <p>Your Buffer account is connected.</p>
+
+                {% if buffer_connection.email %}
+                    <p class="connection-email">
+                        {{ buffer_connection.email }}
+                    </p>
+                {% endif %}
+            </div>
+
+        {% else %}
+
+            <div class="connection-status">
+                <strong>Buffer Not Connected</strong>
+                <p>Connect your Buffer account to get started.</p>
+            </div>
+
+            <a
+                href="{{ url_for('auth.connect_buffer') }}"
+                class="connect-button"
+            >
+                Connect Buffer
+            </a>
+
+        {% endif %}
+
+        <p class="note">
+            Your inventory workspace is being prepared.
+        </p>
+
+        <form
+            action="{{ url_for('accounts.logout') }}"
+            method="POST"
+        >
+            <input
+                type="hidden"
+                name="csrf_token"
+                value="{{ csrf_token() }}"
+            >
+
+            <button type="submit" class="logout-button">
+                Log out
+            </button>
+        </form>
+
+    </main>
+</body>
+</html>

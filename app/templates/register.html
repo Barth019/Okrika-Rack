@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Account | Okrika-Rack</title>
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <main class="container">
+        <div class="brand">Okrika-Rack</div>
+
+        <h1>Create your account.</h1>
+
+        {% with messages = get_flashed_messages() %}
+            {% for message in messages %}
+                <p class="flash-message">{{ message }}</p>
+            {% endfor %}
+        {% endwith %}
+
+        <form method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <p>
+                <input type="email" name="email"
+                       placeholder="Email address" required>
+            </p>
+
+            <p>
+                <input type="password" name="password"
+                       placeholder="Password (at least 12 characters)"
+                       minlength="12" required>
+            </p>
+
+            <p>
+                <input type="password" name="confirm_password"
+                       placeholder="Confirm password" required>
+            </p>
+
+            <button type="submit" class="connect-button">
+                Create Account
+            </button>
+        </form>
+
+        <p class="note">
+            Already have an account?
+            <a href="{{ url_for('accounts.login') }}">Log in</a>
+        </p>
+    </main>
+</body>
+</html>
