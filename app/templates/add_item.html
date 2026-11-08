@@ -1,0 +1,349 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Add Item | Okrika-Rack</title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='css/style.css') }}"
+    >
+
+    <style>
+        .image-upload-area {
+            margin: 12px 0 22px;
+        }
+
+        .image-upload-box {
+            display: block;
+            padding: 24px;
+            border: 2px dashed #c8c8c0;
+            border-radius: 12px;
+            text-align: center;
+            cursor: pointer;
+            background: #fafaf7;
+            transition: border-color 0.2s, background 0.2s;
+        }
+
+        .image-upload-box:hover {
+            border-color: #65734f;
+            background: #f3f5ee;
+        }
+
+        .upload-icon {
+            font-size: 32px;
+            margin-bottom: 8px;
+        }
+
+        .upload-hint {
+            display: block;
+            margin-top: 7px;
+            font-size: 13px;
+            color: #777;
+        }
+
+        .image-preview {
+            display: none;
+            width: 100%;
+            max-height: 300px;
+            object-fit: contain;
+            margin-top: 15px;
+            border-radius: 12px;
+            background: #eee;
+        }
+
+        .image-status {
+            font-size: 13px;
+            margin-top: 8px;
+            color: #555;
+        }
+
+        .remove-image {
+            display: none;
+            margin-top: 10px;
+            border: none;
+            background: transparent;
+            color: #a32626;
+            cursor: pointer;
+            font-size: 14px;
+        }
+    </style>
+</head>
+
+<body>
+    <main class="container inventory-container">
+
+        <div class="brand">Okrika-Rack</div>
+
+        <a href="{{ url_for('items.inventory') }}" class="back-link">
+            ← Back to inventory
+        </a>
+
+        <h1>Add a new<br>item.</h1>
+
+        <p class="description">
+            Add the details and a photo of your thrift item.
+        </p>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash-message flash-{{ category }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form
+            method="POST"
+            enctype="multipart/form-data"
+            class="item-form"
+            id="add-item-form"
+        >
+
+            <input
+                type="hidden"
+                name="csrf_token"
+                value="{{ csrf_token() }}"
+            >
+
+            <label for="name">Item name *</label>
+            <input
+                type="text"
+                id="name"
+                name="name"
+                maxlength="150"
+                placeholder="e.g. Vintage denim jacket"
+                required
+            >
+
+            <label for="image">Product photo</label>
+
+            <div class="image-upload-area">
+                <label for="image" class="image-upload-box">
+                    <div class="upload-icon">📷</div>
+                    <strong>Choose a product photo</strong>
+                    <span class="upload-hint">
+                        JPEG, PNG or WebP · Maximum 5 MB
+                    </span>
+                </label>
+
+                <input
+                    type="file"
+                    id="image"
+                    name="image"
+                    accept="image/jpeg,image/png,image/webp"
+                    hidden
+                >
+
+                <img
+                    id="image-preview"
+                    class="image-preview"
+                    alt="Selected product photo preview"
+                >
+
+                <p id="image-status" class="image-status"></p>
+
+                <button
+                    type="button"
+                    id="remove-image"
+                    class="remove-image"
+                >
+                    Remove photo
+                </button>
+            </div>
+
+            <label for="description">Description</label>
+            <textarea
+                id="description"
+                name="description"
+                rows="4"
+                placeholder="Describe the item..."
+            ></textarea>
+
+            <label for="price">Selling price (₦) *</label>
+            <input
+                type="number"
+                id="price"
+                name="price"
+                min="0"
+                max="99999999.99"
+                step="0.01"
+                placeholder="e.g. 15000"
+                required
+            >
+
+            <label for="size">Size</label>
+            <input
+                type="text"
+                id="size"
+                name="size"
+                maxlength="50"
+                placeholder="e.g. Medium, XL, Size 42"
+            >
+
+            <label for="condition">Condition *</label>
+            <select id="condition" name="condition" required>
+                <option value="">Select condition</option>
+                <option value="new">New</option>
+                <option value="excellent">Excellent</option>
+                <option value="good">Good</option>
+                <option value="fair">Fair</option>
+            </select>
+
+            <label for="notes">Private notes</label>
+            <textarea
+                id="notes"
+                name="notes"
+                rows="3"
+                placeholder="Notes for your own reference..."
+            ></textarea>
+
+            <button type="submit" class="connect-button" id="save-item">
+                Save item
+            </button>
+
+        </form>
+
+    </main>
+
+    <script>
+        const imageInput = document.getElementById("image");
+        const preview = document.getElementById("image-preview");
+        const status = document.getElementById("image-status");
+        const removeButton = document.getElementById("remove-image");
+        const form = document.getElementById("add-item-form");
+        const saveButton = document.getElementById("save-item");
+
+        let compressedImage = null;
+        let previewUrl = null;
+
+        const allowedTypes = [
+            "image/jpeg",
+            "image/png",
+            "image/webp"
+        ];
+
+        function clearPreview() {
+            if (previewUrl) {
+                URL.revokeObjectURL(previewUrl);
+                previewUrl = null;
+            }
+
+            preview.removeAttribute("src");
+            preview.style.display = "none";
+            removeButton.style.display = "none";
+            status.textContent = "";
+            compressedImage = null;
+        }
+
+        imageInput.addEventListener("change", async function () {
+            clearPreview();
+
+            const file = imageInput.files[0];
+
+            if (!file) return;
+
+            if (!allowedTypes.includes(file.type)) {
+                alert("Please select a JPEG, PNG or WebP image.");
+                imageInput.value = "";
+                return;
+            }
+
+            if (file.size > 5 * 1024 * 1024) {
+                alert("Your original image must not exceed 5 MB.");
+                imageInput.value = "";
+                return;
+            }
+
+            previewUrl = URL.createObjectURL(file);
+            preview.src = previewUrl;
+            preview.style.display = "block";
+            removeButton.style.display = "inline-block";
+
+            status.textContent = "Preparing your image...";
+
+            try {
+                const bitmap = await createImageBitmap(file);
+
+                const maxDimension = 1600;
+                const scale = Math.min(
+                    1,
+                    maxDimension / Math.max(bitmap.width, bitmap.height)
+                );
+
+                const canvas = document.createElement("canvas");
+
+                canvas.width = Math.round(bitmap.width * scale);
+                canvas.height = Math.round(bitmap.height * scale);
+
+                const context = canvas.getContext("2d");
+
+                context.drawImage(
+                    bitmap,
+                    0,
+                    0,
+                    canvas.width,
+                    canvas.height
+                );
+
+                bitmap.close();
+
+                const blob = await new Promise((resolve, reject) => {
+                    canvas.toBlob(
+                        result => result
+                            ? resolve(result)
+                            : reject(new Error("Image compression failed.")),
+                        "image/jpeg",
+                        0.82
+                    );
+                });
+
+                compressedImage = new File(
+                    [blob],
+                    "product-photo.jpg",
+                    { type: "image/jpeg" }
+                );
+
+                const originalKB = (file.size / 1024).toFixed(1);
+                const compressedKB = (blob.size / 1024).toFixed(1);
+
+                status.textContent =
+                    `Ready: ${originalKB} KB → ${compressedKB} KB`;
+
+            } catch (error) {
+                console.error(error);
+                status.textContent =
+                    "Could not prepare this image. Please try another.";
+                compressedImage = null;
+            }
+        });
+
+        removeButton.addEventListener("click", function () {
+            imageInput.value = "";
+            clearPreview();
+        });
+
+        form.addEventListener("submit", function (event) {
+            if (imageInput.files.length > 0 && !compressedImage) {
+                event.preventDefault();
+                alert("Please wait for image preparation to finish.");
+                return;
+            }
+
+            if (compressedImage) {
+                const transfer = new DataTransfer();
+                transfer.items.add(compressedImage);
+                imageInput.files = transfer.files;
+            }
+
+            saveButton.disabled = true;
+            saveButton.textContent = "Saving item...";
+        });
+    </script>
+</body>
+</html>

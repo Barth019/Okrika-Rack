@@ -46,9 +46,99 @@ class Seller(UserMixin, db.Model):
         "BufferConnection",
         back_populates="seller",
     )
+    items = db.relationship(
+        "Item",
+        back_populates="seller",
+        cascade="all, delete-orphan",
+    )
 
     def __repr__(self):
         return f"<Seller {self.email}>"
+
+class Item(db.Model):
+    """Represents an individual thrift item in a seller's inventory."""
+
+    __tablename__ = "items"
+
+    __table_args__ = (
+        db.CheckConstraint(
+            "price >= 0",
+            name="ck_items_price_nonnegative",
+        ),
+        db.CheckConstraint(
+            "availability IN ('available', 'sold')",
+            name="ck_items_availability",
+        ),
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    seller_id = db.Column(
+        db.Integer,
+        db.ForeignKey("sellers.id"),
+        nullable=False,
+        index=True,
+    )
+
+    seller = db.relationship(
+        "Seller",
+        back_populates="items",
+    )
+
+    name = db.Column(
+        db.String(150),
+        nullable=False,
+    )
+
+    description = db.Column(
+        db.Text,
+        nullable=True,
+    )
+    image_url = db.Column(db.String(500), nullable=True)
+    image_public_id = db.Column(db.String(255), nullable=True)
+
+    price = db.Column(
+        db.Numeric(10, 2),
+        nullable=False,
+    )
+
+    size = db.Column(
+        db.String(50),
+        nullable=True,
+    )
+
+    condition = db.Column(
+        db.String(30),
+        nullable=False,
+    )
+
+    notes = db.Column(
+        db.Text,
+        nullable=True,
+    )
+
+    availability = db.Column(
+        db.String(20),
+        default="available",
+        nullable=False,
+        index=True,
+    )
+
+    created_at = db.Column(
+        db.DateTime(timezone=True),
+        default=utc_now,
+        nullable=False,
+    )
+
+    updated_at = db.Column(
+        db.DateTime(timezone=True),
+        default=utc_now,
+        onupdate=utc_now,
+        nullable=False,
+    )
+
+    def __repr__(self):
+        return f"<Item {self.name} - Seller {self.seller_id}>"
 
 
 class BufferConnection(db.Model):

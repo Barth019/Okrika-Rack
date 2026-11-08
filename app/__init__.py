@@ -2,6 +2,8 @@ from flask import Flask, render_template
 from flask_login import LoginManager, current_user
 from flask_wtf.csrf import CSRFProtect
 from flask_migrate import Migrate
+from app.items import items_bp
+import cloudinary
 
 from app.config import Config
 from app.models import db, BufferConnection, Seller
@@ -17,6 +19,12 @@ csrf = CSRFProtect()
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
+    cloudinary.config(
+        cloud_name=app.config["CLOUDINARY_CLOUD_NAME"],
+        api_key=app.config["CLOUDINARY_API_KEY"],
+        api_secret=app.config["CLOUDINARY_API_SECRET"],
+        secure=True,
+    )
 
     # Secure session cookies.
     app.config["SESSION_COOKIE_HTTPONLY"] = True
@@ -42,6 +50,7 @@ def create_app():
     # Register application routes.
     app.register_blueprint(auth_bp)
     app.register_blueprint(accounts_bp)
+    app.register_blueprint(items_bp)
 
     @app.route("/")
     def home():

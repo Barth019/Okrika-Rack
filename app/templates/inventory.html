@@ -1,0 +1,121 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>My Inventory | Okrika-Rack</title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='css/style.css') }}"
+    >
+</head>
+
+<body>
+    <main class="container inventory-container">
+
+        <div class="brand">Okrika-Rack</div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash-message flash-{{ category }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <h1>My inventory.</h1>
+
+        <p class="description">
+            Manage your thrift items and keep track of what's available.
+        </p>
+
+        <a href="{{ url_for('items.add_item') }}" class="connect-button">
+            + Add new item
+        </a>
+
+        <div class="inventory-list">
+
+            {% if items %}
+
+                {% for item in items %}
+
+                    <article class="inventory-card">
+
+                        {% if item.image_url %}
+                            <div class="inventory-image-wrapper">
+                                <img
+                                    src="{{ item.image_url }}"
+                                    alt="{{ item.name }}"
+                                    class="inventory-image"
+                                    loading="lazy"
+                                >
+                            </div>
+                        {% endif %}
+
+                        <div class="inventory-card-header">
+                            <h2>{{ item.name }}</h2>
+
+                            <span class="availability-badge">
+                                {{ item.availability|title }}
+                            </span>
+                        </div>
+
+                        <p class="item-price">
+                            ₦{{ "{:,.2f}".format(item.price) }}
+                        </p>
+
+                        {% if item.size %}
+                            <p>Size: {{ item.size }}</p>
+                        {% endif %}
+
+                        <p>Condition: {{ item.condition|title }}</p>
+
+                        {% if item.description %}
+                            <p>{{ item.description }}</p>
+                        {% endif %}
+
+                    </article>
+
+                {% endfor %}
+
+            {% else %}
+
+                <div class="empty-inventory">
+                    <h2>Your inventory is empty.</h2>
+
+                    <p>
+                        Start by adding your first thrift item.
+                    </p>
+                </div>
+
+            {% endif %}
+
+        </div>
+
+        <p class="note">
+            Logged in as {{ current_user.email }}
+        </p>
+
+        <form
+            action="{{ url_for('accounts.logout') }}"
+            method="POST"
+        >
+            <input
+                type="hidden"
+                name="csrf_token"
+                value="{{ csrf_token() }}"
+            >
+
+            <button type="submit" class="logout-button">
+                Log out
+            </button>
+        </form>
+
+    </main>
+</body>
+</html>

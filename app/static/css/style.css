@@ -162,3 +162,158 @@ button.connect-button {
     background-color: #dbeafe;
     border: 1px solid #93c5fd;
 }
+
+.inventory-container {
+    max-width: 760px;
+    margin: 40px auto;
+    text-align: left;
+}
+
+.inventory-container .brand {
+    text-align: center;
+}
+
+.back-link {
+    display: inline-block;
+    margin-top: 28px;
+    color: #62735a;
+    text-decoration: none;
+    font-size: 14px;
+}
+
+.item-form {
+    margin-top: 30px;
+}
+
+.item-form label {
+    display: block;
+    margin: 20px 0 8px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.item-form input,
+.item-form textarea,
+.item-form select {
+    width: 100%;
+    padding: 14px;
+    border: 1px solid #d9ddd5;
+    border-radius: 8px;
+    background: white;
+    font-family: inherit;
+    font-size: 15px;
+}
+
+.item-form textarea {
+    resize: vertical;
+}
+
+.item-form input:focus,
+.item-form textarea:focus,
+.item-form select:focus {
+    outline: 2px solid #62735a;
+    border-color: transparent;
+}
+
+.item-form button {
+    width: 100%;
+}
+
+.inventory-list {
+    margin-top: 36px;
+}
+
+.inventory-card {
+    margin-bottom: 18px;
+    padding: 22px;
+    border: 1px solid #e0e4dc;
+    border-radius: 12px;
+    background: white;
+}
+
+.inventory-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.inventory-card h2 {
+    margin: 0;
+    font-size: 20px;
+}
+
+.inventory-card p {
+    color: #697067;
+    line-height: 1.6;
+    overflow-wrap: anywhere;
+}
+
+.item-price {
+    font-size: 20px;
+    font-weight: 700;
+    color: #263b2d !important;
+}
+
+.availability-badge {
+    padding: 6px 10px;
+    border-radius: 20px;
+    background: #dcfce7;
+    color: #166534;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.empty-inventory {
+    margin-top: 28px;
+    padding: 36px 20px;
+    border: 1px dashed #cbd3c6;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.empty-inventory p {
+    color: #697067;
+}
+
+.logout-button {
+    margin-top: 25px;
+    padding: 12px 20px;
+    border: 1px solid #d9ddd5;
+    border-radius: 8px;
+    background: white;
+    color: #697067;
+    cursor: pointer;
+}
+
+@media (max-width: 480px) {
+    .inventory-container {
+        margin: 10px auto;
+    }
+
+    .inventory-card-header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+}
+.inventory-image-wrapper {
+    width: 100%;
+    height: 260px;
+    overflow: hidden;
+    border-radius: 10px;
+    margin-bottom: 18px;
+    background: #f3f3ef;
+}
+
+.inventory-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+@media (max-width: 480px) {
+    .inventory-image-wrapper {
+        height: 220px;
+    }
+}
