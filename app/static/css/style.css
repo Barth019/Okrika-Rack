@@ -334,3 +334,55 @@ button.connect-button {
 .edit-item-button:hover {
     background: #65734f;
 }
+
+/* Inventory item action buttons */
+.item-actions {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 12px;
+    margin-top: 18px;
+}
+
+.item-actions form {
+    display: flex;
+    margin: 0;
+    padding: 0;
+}
+
+.item-actions .edit-item-button,
+.item-actions .delete-item-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 120px;
+    height: 44px;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    border: none;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.item-actions .edit-item-button {
+    background: #20251f;
+    color: #ffffff;
+}
+
+.item-actions .edit-item-button:hover {
+    background: #65734f;
+}
+
+.item-actions .delete-item-button {
+    background: #fce8e8;
+    color: #b42318;
+}
+
+.item-actions .delete-item-button:hover {
+    background: #f8cccc;
+}

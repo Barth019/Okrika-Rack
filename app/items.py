@@ -289,3 +289,64 @@ def edit_item(item_id):
         "edit_item.html",
         item=item,
     )
+
+
+@items_bp.route("/<int:item_id>/delete", methods=["POST"])
+@login_required
+def delete_item(item_id):
+    """Delete an inventory item belonging to the logged-in seller."""
+
+    item = Item.query.filter_by(
+        id=item_id,
+        seller_id=current_user.id,
+    ).first_or_404()
+
+    image_public_id = item.image_public_id
+
+    # Delete the database record first.
+    try:
+        db.session.delete(item)
+        db.session.commit()
+
+    except Exception:
+        db.session.rollback()
+        logger.exception("Failed to delete inventory item from database.")
+
+        flash(
+            "We couldn't delete your item. Please try again.",
+            "error",
+        )
+        return redirect(url_for("items.inventory"))
+
+    # Clean up the Cloudinary image after database deletion.
+    if image_public_id:
+        try:
+            result = cloudinary.uploader.destroy(
+                image_public_id,
+                resource_type="image",
+            )
+
+            if result.get("result") not in {"ok", "not found"}:
+                logger.error(
+                    "Cloudinary cleanup failed for deleted item."
+                )
+                flash(
+                    "Your item was deleted, but its image could not "
+                    "be removed. Please contact support.",
+                    "warning",
+                )
+                return redirect(url_for("items.inventory"))
+
+        except Exception:
+            logger.exception(
+                "Cloudinary cleanup failed for deleted inventory image."
+            )
+            flash(
+                "Your item was deleted, but its image could not "
+                "be removed. Please contact support.",
+                "warning",
+            )
+            return redirect(url_for("items.inventory"))
+
+    flash("Your item has been deleted successfully!", "success")
+    return redirect(url_for("items.inventory"))

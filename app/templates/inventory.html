@@ -78,12 +78,31 @@
                         {% if item.description %}
                             <p>{{ item.description }}</p>
                         {% endif %}
-                        <a
-                            href="{{ url_for('items.edit_item', item_id=item.id) }}"
-                            class="edit-item-button"
-                        >
-                            Edit item
-                        </a>
+
+                        <div class="item-actions">
+                            <a
+                                href="{{ url_for('items.edit_item', item_id=item.id) }}"
+                                class="edit-item-button"
+                            >
+                                Edit item
+                            </a>
+
+                            <form
+                                action="{{ url_for('items.delete_item', item_id=item.id) }}"
+                                method="POST"
+                                onsubmit="return confirm('Are you sure you want to delete this item? This action cannot be undone.');"
+                            >
+                                <input
+                                    type="hidden"
+                                    name="csrf_token"
+                                    value="{{ csrf_token() }}"
+                                >
+
+                                <button type="submit" class="delete-item-button">
+                                    Delete item
+                                </button>
+                            </form>
+                        </div>
 
                     </article>
 
