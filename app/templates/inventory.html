@@ -78,6 +78,12 @@
                         {% if item.description %}
                             <p>{{ item.description }}</p>
                         {% endif %}
+                        <a
+                            href="{{ url_for('items.edit_item', item_id=item.id) }}"
+                            class="edit-item-button"
+                        >
+                            Edit item
+                        </a>
 
                     </article>
 

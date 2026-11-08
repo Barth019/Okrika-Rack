@@ -317,3 +317,20 @@ button.connect-button {
         height: 220px;
     }
 }
+
+.edit-item-button {
+    display: inline-block;
+    margin-top: 12px;
+    padding: 10px 18px;
+    background: #20251f;
+    color: #ffffff;
+    text-decoration: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    transition: background 0.2s ease;
+}
+
+.edit-item-button:hover {
+    background: #65734f;
+}

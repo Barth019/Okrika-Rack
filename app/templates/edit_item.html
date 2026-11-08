@@ -1,0 +1,407 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Edit Item | Okrika-Rack</title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='css/style.css') }}"
+    >
+
+    <style>
+        .image-upload-area {
+            margin: 12px 0 22px;
+        }
+
+        .image-upload-box {
+            display: block;
+            padding: 24px;
+            border: 2px dashed #c8c8c0;
+            border-radius: 12px;
+            text-align: center;
+            cursor: pointer;
+            background: #fafaf7;
+        }
+
+        .image-upload-box:hover {
+            border-color: #65734f;
+            background: #f3f5ee;
+        }
+
+        .upload-icon {
+            font-size: 32px;
+            margin-bottom: 8px;
+        }
+
+        .upload-hint {
+            display: block;
+            margin-top: 7px;
+            font-size: 13px;
+            color: #777;
+        }
+
+        .current-image {
+            width: 100%;
+            max-height: 280px;
+            object-fit: contain;
+            border-radius: 12px;
+            margin: 12px 0;
+            background: #eee;
+        }
+
+        .image-preview {
+            display: none;
+            width: 100%;
+            max-height: 280px;
+            object-fit: contain;
+            margin-top: 12px;
+            border-radius: 12px;
+            background: #eee;
+        }
+
+        .image-status {
+            font-size: 13px;
+            margin-top: 8px;
+            color: #555;
+        }
+
+        .remove-image {
+            margin-top: 10px;
+            border: none;
+            background: transparent;
+            color: #a32626;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .remove-image-label {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            margin: 12px 0;
+            font-size: 14px;
+        }
+    </style>
+</head>
+
+<body>
+    <main class="container inventory-container">
+
+        <div class="brand">Okrika-Rack</div>
+
+        <a href="{{ url_for('items.inventory') }}" class="back-link">
+            ← Back to inventory
+        </a>
+
+        <h1>Edit item.</h1>
+
+        <p class="description">
+            Update your product details and photos.
+        </p>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash-message flash-{{ category }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form
+            method="POST"
+            enctype="multipart/form-data"
+            class="item-form"
+            id="edit-item-form"
+        >
+
+            <input
+                type="hidden"
+                name="csrf_token"
+                value="{{ csrf_token() }}"
+            >
+
+            <label for="name">Item name *</label>
+            <input
+                type="text"
+                id="name"
+                name="name"
+                maxlength="150"
+                value="{{ item.name }}"
+                required
+            >
+
+            <label>Product photo</label>
+
+            <div class="image-upload-area">
+
+                {% if item.image_url %}
+                    <p>Current photo:</p>
+
+                    <img
+                        src="{{ item.image_url }}"
+                        alt="{{ item.name }}"
+                        class="current-image"
+                        id="current-image"
+                    >
+                {% else %}
+                    <p id="no-current-image">
+                        This item doesn't have a photo yet.
+                    </p>
+                {% endif %}
+
+                <label for="image" class="image-upload-box">
+                    <div class="upload-icon">📷</div>
+                    <strong>Choose a replacement photo</strong>
+                    <span class="upload-hint">
+                        JPEG, PNG or WebP · Maximum 5 MB
+                    </span>
+                </label>
+
+                <input
+                    type="file"
+                    id="image"
+                    name="image"
+                    accept="image/jpeg,image/png,image/webp"
+                    hidden
+                >
+
+                <img
+                    id="image-preview"
+                    class="image-preview"
+                    alt="Replacement photo preview"
+                >
+
+                <p id="image-status" class="image-status"></p>
+
+                <button
+                    type="button"
+                    id="cancel-image"
+                    class="remove-image"
+                    hidden
+                >
+                    Cancel replacement
+                </button>
+
+                {% if item.image_url %}
+                    <label class="remove-image-label">
+                        <input
+                            type="checkbox"
+                            id="remove-image"
+                            name="remove_image"
+                            value="true"
+                        >
+                        Remove current photo
+                    </label>
+                {% endif %}
+
+            </div>
+
+            <label for="description">Description</label>
+            <textarea
+                id="description"
+                name="description"
+                rows="4"
+            >{{ item.description or '' }}</textarea>
+
+            <label for="price">Selling price (₦) *</label>
+            <input
+                type="number"
+                id="price"
+                name="price"
+                min="0"
+                max="99999999.99"
+                step="0.01"
+                value="{{ item.price }}"
+                required
+            >
+
+            <label for="size">Size</label>
+            <input
+                type="text"
+                id="size"
+                name="size"
+                maxlength="50"
+                value="{{ item.size or '' }}"
+            >
+
+            <label for="condition">Condition *</label>
+            <select id="condition" name="condition" required>
+                <option value="">Select condition</option>
+                <option value="new" {% if item.condition == 'new' %}selected{% endif %}>New</option>
+                <option value="excellent" {% if item.condition == 'excellent' %}selected{% endif %}>Excellent</option>
+                <option value="good" {% if item.condition == 'good' %}selected{% endif %}>Good</option>
+                <option value="fair" {% if item.condition == 'fair' %}selected{% endif %}>Fair</option>
+            </select>
+
+            <label for="notes">Private notes</label>
+            <textarea
+                id="notes"
+                name="notes"
+                rows="3"
+            >{{ item.notes or '' }}</textarea>
+
+            <button
+                type="submit"
+                class="connect-button"
+                id="save-item"
+            >
+                Save changes
+            </button>
+
+        </form>
+
+    </main>
+
+    <script>
+        const imageInput = document.getElementById("image");
+        const preview = document.getElementById("image-preview");
+        const status = document.getElementById("image-status");
+        const cancelButton = document.getElementById("cancel-image");
+        const currentImage = document.getElementById("current-image");
+        const removeCheckbox = document.getElementById("remove-image");
+        const form = document.getElementById("edit-item-form");
+        const saveButton = document.getElementById("save-item");
+
+        let compressedImage = null;
+        let previewUrl = null;
+
+        const allowedTypes = [
+            "image/jpeg",
+            "image/png",
+            "image/webp"
+        ];
+
+        function clearPreview() {
+            if (previewUrl) {
+                URL.revokeObjectURL(previewUrl);
+                previewUrl = null;
+            }
+
+            preview.removeAttribute("src");
+            preview.style.display = "none";
+            status.textContent = "";
+            compressedImage = null;
+        }
+
+        imageInput.addEventListener("change", async function () {
+            clearPreview();
+
+            const file = imageInput.files[0];
+
+            if (!file) return;
+
+            if (!allowedTypes.includes(file.type)) {
+                alert("Please select a JPEG, PNG or WebP image.");
+                imageInput.value = "";
+                return;
+            }
+
+            if (file.size > 5 * 1024 * 1024) {
+                alert("Your original image must not exceed 5 MB.");
+                imageInput.value = "";
+                return;
+            }
+
+            previewUrl = URL.createObjectURL(file);
+            preview.src = previewUrl;
+            preview.style.display = "block";
+            cancelButton.hidden = false;
+
+            status.textContent = "Preparing your image...";
+
+            try {
+                const bitmap = await createImageBitmap(file);
+
+                const maxDimension = 1600;
+
+                const scale = Math.min(
+                    1,
+                    maxDimension / Math.max(bitmap.width, bitmap.height)
+                );
+
+                const canvas = document.createElement("canvas");
+
+                canvas.width = Math.round(bitmap.width * scale);
+                canvas.height = Math.round(bitmap.height * scale);
+
+                const context = canvas.getContext("2d");
+
+                context.drawImage(
+                    bitmap,
+                    0,
+                    0,
+                    canvas.width,
+                    canvas.height
+                );
+
+                bitmap.close();
+
+                const blob = await new Promise((resolve, reject) => {
+                    canvas.toBlob(
+                        result => result
+                            ? resolve(result)
+                            : reject(new Error("Image compression failed.")),
+                        "image/jpeg",
+                        0.82
+                    );
+                });
+
+                compressedImage = new File(
+                    [blob],
+                    "product-photo.jpg",
+                    { type: "image/jpeg" }
+                );
+
+                status.textContent =
+                    `Ready: ${(file.size / 1024).toFixed(1)} KB → ` +
+                    `${(blob.size / 1024).toFixed(1)} KB`;
+
+            } catch (error) {
+                console.error(error);
+                status.textContent =
+                    "Could not prepare this image. Please try another.";
+                compressedImage = null;
+            }
+        });
+
+        cancelButton.addEventListener("click", function () {
+            imageInput.value = "";
+            clearPreview();
+            cancelButton.hidden = true;
+        });
+
+        if (removeCheckbox) {
+            removeCheckbox.addEventListener("change", function () {
+                if (this.checked && currentImage) {
+                    currentImage.style.opacity = "0.35";
+                } else if (currentImage) {
+                    currentImage.style.opacity = "1";
+                }
+            });
+        }
+
+        form.addEventListener("submit", function (event) {
+            if (imageInput.files.length > 0 && !compressedImage) {
+                event.preventDefault();
+                alert("Please wait for image preparation to finish.");
+                return;
+            }
+
+            if (compressedImage) {
+                const transfer = new DataTransfer();
+                transfer.items.add(compressedImage);
+                imageInput.files = transfer.files;
+            }
+
+            saveButton.disabled = true;
+            saveButton.textContent = "Saving changes...";
+        });
+    </script>
+</body>
+</html>
