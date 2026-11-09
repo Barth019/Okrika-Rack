@@ -47,6 +47,13 @@
                         {{ buffer_connection.email }}
                     </p>
                 {% endif %}
+
+                <a
+                    href="{{ url_for('scheduler.channels') }}"
+                    class="connect-button"
+                >
+                    Manage Social Channels
+                </a>
             </div>
 
         {% else %}

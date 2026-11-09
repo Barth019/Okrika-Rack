@@ -5,10 +5,12 @@ from flask_migrate import Migrate
 from app.items import items_bp
 import cloudinary
 
+
 from app.config import Config
 from app.models import db, BufferConnection, Seller
 from app.auth import auth_bp
 from app.accounts import accounts_bp
+from app.scheduler import scheduler_bp
 
 
 migrate = Migrate()
@@ -51,6 +53,7 @@ def create_app():
     app.register_blueprint(auth_bp)
     app.register_blueprint(accounts_bp)
     app.register_blueprint(items_bp)
+    app.register_blueprint(scheduler_bp)
 
     @app.route("/")
     def home():

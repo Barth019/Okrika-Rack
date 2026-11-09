@@ -51,6 +51,11 @@ class Seller(UserMixin, db.Model):
         back_populates="seller",
         cascade="all, delete-orphan",
     )
+    scheduled_posts = db.relationship(
+        "ScheduledPost",
+        back_populates="seller",
+        cascade="all, delete-orphan",
+    )
 
     def __repr__(self):
         return f"<Seller {self.email}>"
@@ -83,6 +88,11 @@ class Item(db.Model):
     seller = db.relationship(
         "Seller",
         back_populates="items",
+    )
+
+    scheduled_posts = db.relationship(
+        "ScheduledPost",
+        back_populates="item",
     )
 
     name = db.Column(
@@ -232,3 +242,100 @@ class OAuthTransaction(db.Model):
 
     def __repr__(self):
         return f"<OAuthTransaction {self.id}>"
+
+class ScheduledPost(db.Model):
+    """Tracks a seller's scheduled social media posts."""
+
+    __tablename__ = "scheduled_posts"
+
+    __table_args__ = (
+        db.CheckConstraint(
+            "status IN ('pending', 'scheduled', 'published', 'failed', 'cancelled')",
+            name="ck_scheduled_posts_status",
+        ),
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    seller_id = db.Column(
+        db.Integer,
+        db.ForeignKey("sellers.id"),
+        nullable=False,
+        index=True,
+    )
+
+    item_id = db.Column(
+        db.Integer,
+        db.ForeignKey("items.id"),
+        nullable=False,
+        index=True,
+    )
+
+    buffer_connection_id = db.Column(
+        db.Integer,
+        db.ForeignKey("buffer_connections.id"),
+        nullable=False,
+        index=True,
+    )
+
+    buffer_channel_id = db.Column(
+        db.String(120),
+        nullable=False,
+    )
+
+    buffer_post_id = db.Column(
+        db.String(120),
+        nullable=True,
+        unique=True,
+    )
+
+    caption = db.Column(
+        db.Text,
+        nullable=False,
+    )
+
+    scheduled_at = db.Column(
+        db.DateTime(timezone=True),
+        nullable=False,
+        index=True,
+    )
+
+    status = db.Column(
+        db.String(20),
+        default="pending",
+        nullable=False,
+        index=True,
+    )
+
+    error_message = db.Column(
+        db.Text,
+        nullable=True,
+    )
+
+    created_at = db.Column(
+        db.DateTime(timezone=True),
+        default=utc_now,
+        nullable=False,
+    )
+
+    updated_at = db.Column(
+        db.DateTime(timezone=True),
+        default=utc_now,
+        onupdate=utc_now,
+        nullable=False,
+    )
+
+    seller = db.relationship(
+        "Seller",
+        back_populates="scheduled_posts",
+    )
+
+    item = db.relationship(
+        "Item",
+        back_populates="scheduled_posts",
+    )
+
+    buffer_connection = db.relationship("BufferConnection")
+
+    def __repr__(self):
+        return f"<ScheduledPost {self.id} - {self.status}>"

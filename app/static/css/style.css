@@ -433,3 +433,24 @@ button.connect-button {
 .item-actions .delete-item-button:hover {
     background: #f8cccc;
 }
+.inventory-navigation {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 24px;
+    margin-top: 16px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+}
+
+.inventory-navigation a {
+    color: #536747;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.inventory-navigation a:hover {
+    color: #20251f;
+    text-decoration: underline;
+}

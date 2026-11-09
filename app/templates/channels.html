@@ -1,0 +1,155 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Social Channels | Okrika-Rack</title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='css/style.css') }}"
+    >
+</head>
+
+<body>
+    <main class="container">
+
+        <div class="brand">Okrika-Rack</div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash-message flash-{{ category }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <h1>Your social channels.</h1>
+
+        <p class="description">
+            Choose a Buffer organization to view its connected
+            social media channels.
+        </p>
+
+        {% if organizations %}
+
+            <form method="GET"
+                  action="{{ url_for('scheduler.channels') }}">
+
+                <label for="organization_id">
+                    Select organization
+                </label>
+
+                <select
+                    id="organization_id"
+                    name="organization_id"
+                    required
+                >
+                    <option value="">Choose an organization</option>
+
+                    {% for organization in organizations %}
+                        <option
+                            value="{{ organization.id }}"
+                            {% if selected_organization and
+                                selected_organization.id == organization.id %}
+                                selected
+                            {% endif %}
+                        >
+                            {{ organization.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+
+                <button type="submit" class="connect-button">
+                    View Channels
+                </button>
+
+            </form>
+
+        {% else %}
+
+            <div class="connection-status">
+                <strong>No organizations found</strong>
+                <p>
+                    We couldn't find any Buffer organizations
+                    connected to your account.
+                </p>
+            </div>
+
+        {% endif %}
+
+        {% if selected_organization %}
+
+            <h2>{{ selected_organization.name }}</h2>
+
+            {% if channels %}
+
+                <div class="inventory-list">
+
+                    {% for channel in channels %}
+
+                        <article class="inventory-card">
+
+                            <div class="inventory-card-header">
+                                <h2>
+                                    {{ channel.displayName or channel.name }}
+                                </h2>
+
+                                <span class="availability-badge available">
+                                    Connected
+                                </span>
+                            </div>
+
+                            <p>
+                                Platform: {{ channel.service|title }}
+                            </p>
+
+                            {% if channel.isDisconnected %}
+                                <p>Connection: Disconnected</p>
+                            {% elif channel.isQueuePaused %}
+                                <p>Queue: Paused</p>
+                            {% elif channel.isLocked %}
+                                <p>Queue: Locked</p>
+                            {% else %}
+                                <p>Queue: Active</p>
+                            {% endif %}
+
+                        </article>
+
+                    {% endfor %}
+
+                </div>
+
+            {% else %}
+
+                <div class="empty-inventory">
+                    <h2>No channels found.</h2>
+                    <p>
+                        This organization doesn't currently
+                        have any channels available.
+                    </p>
+                </div>
+
+            {% endif %}
+
+        {% endif %}
+
+        <p>
+            <a href="{{ url_for('accounts.dashboard') }}">
+                Back to dashboard
+            </a>
+        </p>
+
+        <p>
+            <a href="{{ url_for('items.inventory') }}">
+                View inventory
+            </a>
+        </p>
+
+    </main>
+</body>
+</html>

@@ -49,10 +49,34 @@
                 {% endif %}
             </div>
 
-            <p class="note">
-                Your account is connected. Your inventory workspace
-                is the next step.
-            </p>
+            <div class="home-actions">
+
+                <a
+                    href="{{ url_for('scheduler.channels') }}"
+                    class="connect-button"
+                >
+                    Manage Social Channels
+                </a>
+
+                <a
+                    href="{{ url_for('items.inventory') }}"
+                    class="connect-button"
+                >
+                    View My Inventory
+                </a>
+
+                <a
+                    href="{{ url_for('accounts.dashboard') }}"
+                    class="connect-button"
+                >
+                    Open Dashboard
+                </a>
+
+            </div>
+
+<p class="note">
+    Your Buffer account is connected and your workspace is ready.
+</p>
 
         {% else %}
 
