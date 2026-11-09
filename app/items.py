@@ -350,3 +350,43 @@ def delete_item(item_id):
 
     flash("Your item has been deleted successfully!", "success")
     return redirect(url_for("items.inventory"))
+
+@items_bp.route("/<int:item_id>/availability", methods=["POST"])
+@login_required
+
+def update_availability(item_id):
+    """Update availability for an item owned by the logged-in seller."""
+
+    item = Item.query.filter_by(
+        id=item_id,
+        seller_id=current_user.id,
+    ).first_or_404()
+
+    new_status = request.form.get("availability")
+
+    if new_status not in {"available", "sold"}:
+        flash("Invalid availability status.", "error")
+        return redirect(url_for("items.inventory"))
+
+    if item.availability == new_status:
+        flash("This item already has that status.", "info")
+        return redirect(url_for("items.inventory"))
+
+    item.availability = new_status
+
+    try:
+        db.session.commit()
+        flash(
+            f"{item.name} marked as {new_status}.",
+            "success",
+        )
+
+    except Exception:
+        db.session.rollback()
+        logger.exception("Failed to update item availability.")
+        flash(
+            "We couldn't update the item's availability. Please try again.",
+            "error",
+        )
+
+    return redirect(url_for("items.inventory"))

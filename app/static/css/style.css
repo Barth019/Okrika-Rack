@@ -256,12 +256,59 @@ button.connect-button {
 }
 
 .availability-badge {
+    display: inline-block;
     padding: 6px 10px;
     border-radius: 20px;
-    background: #dcfce7;
-    color: #166534;
     font-size: 12px;
     font-weight: 600;
+    white-space: nowrap;
+}
+
+.availability-badge.available {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.availability-badge.sold {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+/* Availability action buttons */
+.item-actions .availability-action-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 120px;
+    height: 44px;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0 8px;
+    border: none;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.item-actions .mark-sold-button {
+    background: #fff0d9;
+    color: #925500;
+}
+
+.item-actions .mark-sold-button:hover {
+    background: #ffe2b3;
+}
+
+.item-actions .mark-available-button {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.item-actions .mark-available-button:hover {
+    background: #bbf7d0;
 }
 
 .empty-inventory {
