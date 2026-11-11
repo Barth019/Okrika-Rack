@@ -1,0 +1,362 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Schedule Post | Okrika-Rack</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+
+    <style>
+        .schedule-page {
+            max-width: 760px;
+            margin: 0 auto;
+            padding: 30px 20px 60px;
+        }
+
+        .schedule-page .brand {
+            margin-bottom: 30px;
+        }
+
+        .schedule-page h1 {
+            margin-bottom: 10px;
+        }
+
+        .schedule-description {
+            color: #68736b;
+            margin-bottom: 28px;
+            line-height: 1.6;
+        }
+
+        .schedule-product {
+            background: #fff;
+            border: 1px solid #e2e7e2;
+            border-radius: 14px;
+            padding: 22px;
+            margin-bottom: 30px;
+        }
+
+        .schedule-product img {
+            display: block;
+            width: 100%;
+            max-height: 320px;
+            object-fit: cover;
+            border-radius: 10px;
+            margin-bottom: 18px;
+        }
+
+        .schedule-product h2 {
+            margin: 0 0 12px;
+        }
+
+        .schedule-product p {
+            margin: 9px 0;
+            color: #68736b;
+        }
+
+        .schedule-product .item-price {
+            color: #263c2d;
+            font-size: 22px;
+            font-weight: 700;
+        }
+
+        .schedule-form {
+            background: #fff;
+            border: 1px solid #e2e7e2;
+            border-radius: 14px;
+            padding: 24px;
+            margin-bottom: 22px;
+        }
+
+        .schedule-form .form-group {
+            margin-bottom: 22px;
+        }
+
+        .schedule-form label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 9px;
+            color: #263c2d;
+        }
+
+        .schedule-form select,
+        .schedule-form textarea,
+        .schedule-form input[type="datetime-local"] {
+            display: block;
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
+            padding: 13px 14px;
+            border: 1px solid #d6ddd6;
+            border-radius: 9px;
+            background: #fff;
+            color: #26332a;
+            font: inherit;
+            font-size: 15px;
+        }
+
+        .schedule-form textarea {
+            min-height: 190px;
+            resize: vertical;
+            line-height: 1.6;
+        }
+
+        .schedule-form select:focus,
+        .schedule-form textarea:focus,
+        .schedule-form input:focus {
+            outline: none;
+            border-color: #294333;
+            box-shadow: 0 0 0 3px rgba(41, 67, 51, 0.10);
+        }
+
+        .schedule-form button {
+            display: block;
+            width: 100%;
+            margin-top: 12px;
+            padding: 15px;
+            border: none;
+            border-radius: 9px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .schedule-form .note {
+            color: #7a847c;
+            font-size: 13px;
+            line-height: 1.5;
+            margin-top: 10px;
+        }
+
+        .schedule-back {
+            display: inline-block;
+            margin-top: 10px;
+            color: #294333;
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .schedule-back:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 600px) {
+            .schedule-page {
+                padding: 22px 14px 40px;
+            }
+
+            .schedule-form,
+            .schedule-product {
+                padding: 17px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+<main class="container schedule-page">
+
+    <div class="brand">Okrika-Rack</div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+            <div class="flash-message flash-{{ category }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endwith %}
+
+    <h1>Schedule your product.</h1>
+
+    <p class="schedule-description">
+        Prepare your promotional post and choose when Buffer should publish it.
+    </p>
+
+    <article class="schedule-product">
+
+        {% if item.image_url %}
+            <img src="{{ item.image_url }}"
+                 alt="{{ item.name }}">
+        {% endif %}
+
+        <h2>{{ item.name }}</h2>
+
+        <p class="item-price">
+            ₦{{ "{:,.2f}".format(item.price) }}
+        </p>
+
+        {% if item.size %}
+            <p>Size: {{ item.size }}</p>
+        {% endif %}
+
+        <p>Condition: {{ item.condition|title }}</p>
+
+        {% if item.description %}
+            <p>{{ item.description }}</p>
+        {% endif %}
+
+    </article>
+
+    <!-- Buffer organization selection -->
+    <form method="GET"
+          action="{{ url_for('scheduler.new_schedule') }}"
+          class="schedule-form">
+
+        <input type="hidden"
+               name="item_id"
+               value="{{ item.id }}">
+
+        <div class="form-group">
+            <label for="organization_id">
+                Buffer organization
+            </label>
+
+            <select id="organization_id"
+                    name="organization_id"
+                    required>
+
+                <option value="">Choose an organization</option>
+
+                {% for organization in organizations %}
+                    <option value="{{ organization.id }}"
+                        {% if selected_organization_id == organization.id %}
+                            selected
+                        {% endif %}>
+                        {{ organization.name }}
+                    </option>
+                {% endfor %}
+
+            </select>
+        </div>
+
+        <button type="submit" class="connect-button">
+            Load channels
+        </button>
+    </form>
+
+    {% if selected_organization_id %}
+
+        {% if channels %}
+
+            <!-- Post scheduling form -->
+            <form method="POST"
+                  action="{{ url_for(
+                      'scheduler.new_schedule',
+                      item_id=item.id,
+                      organization_id=selected_organization_id
+                  ) }}"
+                  class="schedule-form"
+                  id="schedule-post-form">
+
+                <input type="hidden"
+                       name="csrf_token"
+                       value="{{ csrf_token() }}">
+
+                <input type="hidden"
+                       name="organization_id"
+                       value="{{ selected_organization_id }}">
+
+                <div class="form-group">
+                    <label for="channel_id">
+                        Choose a social media channel
+                    </label>
+
+                    <select id="channel_id"
+                            name="channel_id"
+                            required>
+
+                        <option value="">Select a channel</option>
+
+                        {% for channel in channels %}
+                            <option value="{{ channel.id }}"
+                                {% if channel.isDisconnected or channel.isLocked %}
+                                    disabled
+                                {% endif %}>
+                                {{ channel.displayName or channel.name }}
+                                ({{ channel.service|title }})
+                            </option>
+                        {% endfor %}
+
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="caption">
+                        Post caption
+                    </label>
+
+                    <textarea id="caption"
+                              name="caption"
+                              rows="8"
+                              maxlength="2000"
+                              required>{{ item.name }} — ₦{{ "{:,.2f}".format(item.price) }}
+
+Size: {{ item.size or "Not specified" }}
+Condition: {{ item.condition|title }}
+
+Interested? Send us a message to order.</textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="scheduled_at">
+                        Publication date and time (Nigeria time)
+                    </label>
+
+                    <input type="datetime-local"
+                           id="scheduled_at"
+                           name="scheduled_at"
+                           required>
+
+                    <p class="note">
+                        Times are interpreted as West Africa Time (WAT).
+                        Your scheduled time will be converted to UTC.
+                    </p>
+                </div>
+
+                <button type="submit" class="connect-button">
+                    Schedule post
+                </button>
+
+            </form>
+
+        {% else %}
+
+            <div class="empty-inventory">
+                <h2>No channels available.</h2>
+                <p>
+                    This organization has no channels available for scheduling.
+                </p>
+            </div>
+
+        {% endif %}
+
+    {% endif %}
+
+    <a class="schedule-back"
+       href="{{ url_for('items.inventory') }}">
+        ← Back to inventory
+    </a>
+
+</main>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const form = document.getElementById("schedule-post-form");
+
+    if (!form) return;
+
+    form.addEventListener("submit", function () {
+        if (!form.checkValidity()) return;
+
+        const button = form.querySelector('button[type="submit"]');
+
+        if (button) {
+            button.disabled = true;
+            button.textContent = "Scheduling...";
+        }
+    });
+});
+</script>
+</body>
+</html>

@@ -98,6 +98,14 @@
                             >
                                 Edit item
                             </a>
+                            {% if item.availability == "available" %}
+                                <a
+                                href="{{ url_for('scheduler.new_schedule', item_id=item.id) }}"
+                                class="connect-button"
+                                >
+                                    Schedule post
+                                </a>
+                            {% endif %}
 
                             <form
                                 action="{{ url_for('items.update_availability', item_id=item.id) }}"
