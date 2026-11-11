@@ -15,8 +15,10 @@ from flask import (
 )
 from flask_login import current_user, login_required
 
-from app.models import db, Item
+from app.models import db, Item, ScheduledPost, BufferConnection
 from app.image_uploads import upload_item_image, ImageUploadError
+from app.buffer_client import BufferAPIError, delete_buffer_post
+from app.token_manager import get_valid_buffer_access_token
 
 
 items_bp = Blueprint("items", __name__, url_prefix="/items")
@@ -37,7 +39,8 @@ def inventory():
     """Display only the logged-in seller's inventory."""
 
     items = Item.query.filter_by(
-        seller_id=current_user.id
+        seller_id=current_user.id,
+        is_deleted=False,
     ).order_by(Item.created_at.desc()).all()
 
     return render_template(
@@ -161,6 +164,7 @@ def edit_item(item_id):
     item = Item.query.filter_by(
         id=item_id,
         seller_id=current_user.id,
+        is_deleted=False,
     ).first_or_404()
 
     if request.method == "POST":
@@ -294,23 +298,38 @@ def edit_item(item_id):
 @items_bp.route("/<int:item_id>/delete", methods=["POST"])
 @login_required
 def delete_item(item_id):
-    """Delete an inventory item belonging to the logged-in seller."""
+    """Soft-delete an inventory item belonging to the logged-in seller."""
 
     item = Item.query.filter_by(
         id=item_id,
         seller_id=current_user.id,
+        is_deleted=False,
     ).first_or_404()
 
-    image_public_id = item.image_public_id
+    # Do not hide an item while it still has active scheduled posts.
+    active_posts = ScheduledPost.query.filter(
+        ScheduledPost.item_id == item.id,
+        ScheduledPost.seller_id == current_user.id,
+        ScheduledPost.status.in_(["pending", "scheduled"]),
+    ).count()
 
-    # Delete the database record first.
+    if active_posts:
+        flash(
+            "This item has active scheduled posts. Cancel them before "
+            "deleting the item.",
+            "warning",
+        )
+        return redirect(url_for("items.inventory"))
+
     try:
-        db.session.delete(item)
+        item.is_deleted = True
         db.session.commit()
 
     except Exception:
         db.session.rollback()
-        logger.exception("Failed to delete inventory item from database.")
+        logger.exception(
+            "Failed to soft-delete inventory item."
+        )
 
         flash(
             "We couldn't delete your item. Please try again.",
@@ -318,48 +337,23 @@ def delete_item(item_id):
         )
         return redirect(url_for("items.inventory"))
 
-    # Clean up the Cloudinary image after database deletion.
-    if image_public_id:
-        try:
-            result = cloudinary.uploader.destroy(
-                image_public_id,
-                resource_type="image",
-            )
+    flash(
+        "Your item has been removed from active inventory.",
+        "success",
+    )
 
-            if result.get("result") not in {"ok", "not found"}:
-                logger.error(
-                    "Cloudinary cleanup failed for deleted item."
-                )
-                flash(
-                    "Your item was deleted, but its image could not "
-                    "be removed. Please contact support.",
-                    "warning",
-                )
-                return redirect(url_for("items.inventory"))
-
-        except Exception:
-            logger.exception(
-                "Cloudinary cleanup failed for deleted inventory image."
-            )
-            flash(
-                "Your item was deleted, but its image could not "
-                "be removed. Please contact support.",
-                "warning",
-            )
-            return redirect(url_for("items.inventory"))
-
-    flash("Your item has been deleted successfully!", "success")
     return redirect(url_for("items.inventory"))
+
 
 @items_bp.route("/<int:item_id>/availability", methods=["POST"])
 @login_required
-
 def update_availability(item_id):
-    """Update availability for an item owned by the logged-in seller."""
+    """Update item availability and safely cancel scheduled posts."""
 
     item = Item.query.filter_by(
         id=item_id,
         seller_id=current_user.id,
+        is_deleted=False,
     ).first_or_404()
 
     new_status = request.form.get("availability")
@@ -372,21 +366,112 @@ def update_availability(item_id):
         flash("This item already has that status.", "info")
         return redirect(url_for("items.inventory"))
 
-    item.availability = new_status
+    # Selling an item requires cancelling all active promotional posts.
+    if new_status == "sold":
 
+        active_posts = ScheduledPost.query.filter(
+            ScheduledPost.item_id == item.id,
+            ScheduledPost.seller_id == current_user.id,
+            ScheduledPost.status.in_(["pending", "scheduled"]),
+        ).all()
+
+        cancellation_errors = []
+
+        for post in active_posts:
+
+            # Internal pending posts have not yet been sent to Buffer.
+            if post.status == "pending":
+                if post.buffer_post_id:
+                    cancellation_errors.append(
+                        f"Pending post {post.id} unexpectedly has a "
+                        "Buffer post ID."
+                    )
+                    continue
+
+                post.status = "cancelled"
+                post.error_message = None
+                continue
+
+            # A scheduled post must have a Buffer post ID.
+            if not post.buffer_post_id:
+                cancellation_errors.append(
+                    f"Scheduled post {post.id} has no Buffer post ID."
+                )
+                continue
+
+            connection = BufferConnection.query.filter_by(
+                id=post.buffer_connection_id,
+                seller_id=current_user.id,
+            ).first()
+
+            if connection is None:
+                cancellation_errors.append(
+                    f"Could not find the Buffer connection for "
+                    f"scheduled post {post.id}."
+                )
+                continue
+
+            try:
+                access_token = get_valid_buffer_access_token(
+                    connection
+                )
+
+                deleted_id = delete_buffer_post(
+                    access_token,
+                    post.buffer_post_id,
+                )
+
+                if deleted_id != post.buffer_post_id:
+                    raise BufferAPIError(
+                        "Buffer returned an unexpected deleted post ID."
+                    )
+
+                post.status = "cancelled"
+                post.error_message = None
+
+                # Persist each confirmed remote cancellation immediately.
+                db.session.commit()
+
+            except Exception as exc:
+                db.session.rollback()
+
+                # Record the failure without exposing sensitive details.
+                cancellation_errors.append(
+                    f"Could not confirm cancellation of scheduled "
+                    f"post {post.id}."
+                )
+
+                logger.exception(
+                    "Failed to cancel Buffer post for inventory item."
+                )
+
+        if cancellation_errors:
+            flash(
+                "The item was not marked as sold because some scheduled "
+                "posts could not be cancelled. "
+                "Please resolve the remaining posts and try again.",
+                "error",
+            )
+            return redirect(url_for("items.inventory"))
+
+    # Update availability only after all required cancellations succeed.
     try:
+        item.availability = new_status
         db.session.commit()
-        flash(
-            f"{item.name} marked as {new_status}.",
-            "success",
-        )
 
     except Exception:
         db.session.rollback()
         logger.exception("Failed to update item availability.")
+
         flash(
             "We couldn't update the item's availability. Please try again.",
             "error",
         )
+        return redirect(url_for("items.inventory"))
+
+    flash(
+        f"{item.name} marked as {new_status}.",
+        "success",
+    )
 
     return redirect(url_for("items.inventory"))

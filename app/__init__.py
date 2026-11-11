@@ -18,9 +18,12 @@ login_manager = LoginManager()
 csrf = CSRFProtect()
 
 
-def create_app():
+def create_app(test_config=None):
     app = Flask(__name__)
     app.config.from_object(Config)
+
+    if test_config:
+        app.config.update(test_config)
     cloudinary.config(
         cloud_name=app.config["CLOUDINARY_CLOUD_NAME"],
         api_key=app.config["CLOUDINARY_API_KEY"],

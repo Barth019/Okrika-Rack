@@ -134,6 +134,13 @@ class Item(db.Model):
         index=True,
     )
 
+    is_deleted = db.Column(
+    db.Boolean,
+    default=False,
+    nullable=False,
+    index=True,
+)
+
     created_at = db.Column(
         db.DateTime(timezone=True),
         default=utc_now,

@@ -9,6 +9,157 @@ BUFFER_API_URL = "https://api.buffer.com"
 class BufferAPIError(Exception):
     """Raised when Buffer returns an unexpected API response."""
 
+def buffer_graphql_request(access_token, query, variables=None):
+    """Send an authenticated GraphQL request to Buffer."""
+
+    payload = {"query": query}
+
+    if variables is not None:
+        payload["variables"] = variables
+
+    try:
+        response = httpx.post(
+            BUFFER_API_URL,
+            json=payload,
+            headers={
+                "Authorization": f"Bearer {access_token}",
+                "Content-Type": "application/json",
+            },
+            timeout=20.0,
+        )
+        response.raise_for_status()
+        result = response.json()
+
+    except (httpx.HTTPError, ValueError) as exc:
+        raise BufferAPIError(
+            "Buffer API request failed."
+        ) from exc
+
+    if not isinstance(result, dict):
+        raise BufferAPIError("Buffer returned an invalid response.")
+
+    if result.get("errors"):
+        raise BufferAPIError("Buffer returned a GraphQL error.")
+
+    if "data" not in result:
+        raise BufferAPIError("Buffer response contains no data.")
+
+    return result["data"]
+
+def create_buffer_post(access_token, channel_id, text, due_at):
+    """Create a Buffer post scheduled for a specific UTC time."""
+
+    if not channel_id:
+        raise ValueError("A Buffer channel ID is required.")
+
+    if not text or not text.strip():
+        raise ValueError("Post text cannot be empty.")
+
+    if not due_at:
+        raise ValueError("A scheduled publication time is required.")
+
+    mutation = """
+    mutation CreatePost($input: CreatePostInput!) {
+        createPost(input: $input) {
+            ... on PostActionSuccess {
+                post {
+                    id
+                    text
+                    dueAt
+                }
+            }
+            ... on MutationError {
+                message
+            }
+        }
+    }
+    """
+
+    variables = {
+        "input": {
+            "text": text.strip(),
+            "channelId": channel_id,
+            "schedulingType": "automatic",
+            "mode": "customScheduled",
+            "dueAt": due_at,
+        }
+    }
+
+    data = buffer_graphql_request(
+        access_token,
+        mutation,
+        variables,
+    )
+
+    result = data.get("createPost")
+
+    if not isinstance(result, dict):
+        raise BufferAPIError(
+            "Buffer returned an invalid post creation response."
+        )
+
+    if result.get("message"):
+        raise BufferAPIError(result["message"])
+
+    post = result.get("post")
+
+    if not isinstance(post, dict) or not post.get("id"):
+        raise BufferAPIError(
+            "Buffer did not confirm that the post was created."
+        )
+
+    return post
+
+def delete_buffer_post(access_token, post_id):
+    """Delete a scheduled post from Buffer."""
+
+    if not post_id:
+        raise ValueError("A Buffer post ID is required.")
+
+    mutation = """
+    mutation DeletePost($input: DeletePostInput!) {
+        deletePost(input: $input) {
+            ... on DeletePostSuccess {
+                id
+            }
+            ... on MutationError {
+                message
+            }
+        }
+    }
+    """
+
+    variables = {
+        "input": {
+            "id": post_id,
+        }
+    }
+
+    data = buffer_graphql_request(
+        access_token,
+        mutation,
+        variables,
+    )
+
+    result = data.get("deletePost")
+
+    if not isinstance(result, dict):
+        raise BufferAPIError(
+            "Buffer returned an invalid post deletion response."
+        )
+
+    if result.get("message"):
+        raise BufferAPIError(result["message"])
+
+    deleted_id = result.get("id")
+
+    if deleted_id != post_id:
+        raise BufferAPIError(
+            "Buffer did not confirm post deletion."
+        )
+
+    return deleted_id
+
 
 def exchange_authorization_code(code, code_verifier, config):
     """Exchange an OAuth authorization code for Buffer tokens."""
