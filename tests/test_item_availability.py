@@ -18,6 +18,7 @@ def create_seller_and_item():
         price=15000,
         condition="excellent",
         availability="available",
+        image_url="https://res.cloudinary.com/demo/image/upload/sample.jpg",
     )
     db.session.add(item)
     db.session.flush()

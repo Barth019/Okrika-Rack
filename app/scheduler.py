@@ -241,6 +241,16 @@ def new_schedule():
                     "error",
                 )
 
+            elif (
+                channel.get("service", "").lower() == "instagram"
+                and not item.image_url
+            ):
+                flash(
+                    "This item needs a product image before it can "
+                    "be scheduled to Instagram.",
+                    "error",
+                )
+
             elif not caption:
                 flash(
                     "Please enter a post caption.",
@@ -281,12 +291,15 @@ def new_schedule():
                         .replace("+00:00", "Z")
                     )
 
-                    # Create the post through Buffer.
+                    # Create the post through Buffer with its
+                    # inventory image and channel-specific metadata.
                     created_post = create_buffer_post(
                         access_token,
                         channel_id,
                         caption,
                         due_at,
+                        image_url=item.image_url,
+                        channel_service=channel.get("service"),
                     )
 
                     # Save the confirmed Buffer post locally.

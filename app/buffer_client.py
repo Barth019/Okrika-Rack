@@ -46,7 +46,14 @@ def buffer_graphql_request(access_token, query, variables=None):
 
     return result["data"]
 
-def create_buffer_post(access_token, channel_id, text, due_at):
+def create_buffer_post(
+    access_token,
+    channel_id,
+    text,
+    due_at,
+    image_url=None,
+    channel_service=None,
+):
     """Create a Buffer post scheduled for a specific UTC time."""
 
     if not channel_id:
@@ -57,6 +64,43 @@ def create_buffer_post(access_token, channel_id, text, due_at):
 
     if not due_at:
         raise ValueError("A scheduled publication time is required.")
+
+    service = (channel_service or "").lower()
+
+    if service == "instagram" and not image_url:
+        raise ValueError("Instagram posts require a product image.")
+
+    assets = []
+
+    if image_url:
+        if not image_url.startswith("https://"):
+            raise ValueError(
+                "The product image must use a public HTTPS URL."
+            )
+
+        assets.append({
+            "image": {
+                "url": image_url,
+            }
+        })
+
+    post_input = {
+        "text": text.strip(),
+        "channelId": channel_id,
+        "schedulingType": "automatic",
+        "mode": "customScheduled",
+        "dueAt": due_at,
+        "assets": assets,
+        "needsApproval": False,
+    }
+
+    if service == "instagram":
+        post_input["metadata"] = {
+            "instagram": {
+                "type": "post",
+                "shouldShareToFeed": True,
+            }
+        }
 
     mutation = """
     mutation CreatePost($input: CreatePostInput!) {
@@ -76,13 +120,7 @@ def create_buffer_post(access_token, channel_id, text, due_at):
     """
 
     variables = {
-        "input": {
-            "text": text.strip(),
-            "channelId": channel_id,
-            "schedulingType": "automatic",
-            "mode": "customScheduled",
-            "dueAt": due_at,
-        }
+        "input": post_input,
     }
 
     data = buffer_graphql_request(

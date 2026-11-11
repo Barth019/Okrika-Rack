@@ -1,4 +1,3 @@
-
 from datetime import datetime, timezone
 
 import app.scheduler as scheduler_module
@@ -9,6 +8,11 @@ from test_item_availability import (
     create_seller_and_item,
     login_test_seller,
     create_buffer_connection,
+)
+
+
+TEST_IMAGE_URL = (
+    "https://res.cloudinary.com/demo/image/upload/sample.jpg"
 )
 
 
@@ -63,11 +67,20 @@ def test_successfully_schedules_post(client, app, monkeypatch):
     login_test_seller(client, seller_id)
     mock_buffer_account(monkeypatch)
 
-    def mock_create_post(token, channel_id, text, due_at):
+    def mock_create_post(
+        token,
+        channel_id,
+        text,
+        due_at,
+        image_url=None,
+        channel_service=None,
+    ):
         assert token == "mock-access-token"
         assert channel_id == "test-channel"
         assert text == "Vintage Denim Jacket promotion"
         assert due_at.endswith("Z")
+        assert image_url == TEST_IMAGE_URL
+        assert channel_service == "instagram"
 
         return {"id": "mock-buffer-post-123"}
 
@@ -117,7 +130,9 @@ def test_past_publication_date_is_rejected(
     mock_buffer_account(monkeypatch)
 
     def unexpected_create(*args, **kwargs):
-        raise AssertionError("Buffer must not receive a past-dated post.")
+        raise AssertionError(
+            "Buffer must not receive a past-dated post."
+        )
 
     monkeypatch.setattr(
         scheduler_module,
@@ -155,7 +170,9 @@ def test_invalid_channel_is_rejected(
     mock_buffer_account(monkeypatch)
 
     def unexpected_create(*args, **kwargs):
-        raise AssertionError("Buffer must not receive an invalid channel.")
+        raise AssertionError(
+            "Buffer must not receive an invalid channel."
+        )
 
     monkeypatch.setattr(
         scheduler_module,
@@ -193,7 +210,9 @@ def test_empty_caption_is_rejected(
     mock_buffer_account(monkeypatch)
 
     def unexpected_create(*args, **kwargs):
-        raise AssertionError("Buffer must not receive an empty caption.")
+        raise AssertionError(
+            "Buffer must not receive an empty caption."
+        )
 
     monkeypatch.setattr(
         scheduler_module,
@@ -261,6 +280,7 @@ def test_buffer_api_failure_does_not_save_post(
     with app.app_context():
         assert ScheduledPost.query.count() == 0
 
+
 def test_database_failure_triggers_buffer_post_deletion(
     client, app, monkeypatch
 ):
@@ -272,7 +292,17 @@ def test_database_failure_triggers_buffer_post_deletion(
     created_buffer_posts = []
     deleted_buffer_posts = []
 
-    def mock_create_post(token, channel_id, text, due_at):
+    def mock_create_post(
+        token,
+        channel_id,
+        text,
+        due_at,
+        image_url=None,
+        channel_service=None,
+    ):
+        assert image_url == TEST_IMAGE_URL
+        assert channel_service == "instagram"
+
         created_buffer_posts.append("mock-buffer-post-789")
         return {"id": "mock-buffer-post-789"}
 
@@ -354,7 +384,9 @@ def test_duplicate_scheduling_is_blocked(
             buffer_channel_id="test-channel",
             buffer_post_id="existing-buffer-post",
             caption="Existing promotion",
-            scheduled_at=datetime(2099, 1, 1, tzinfo=timezone.utc),
+            scheduled_at=datetime(
+                2099, 1, 1, tzinfo=timezone.utc
+            ),
             status="scheduled",
         )
 
@@ -390,7 +422,10 @@ def test_duplicate_scheduling_is_blocked(
     )
 
     assert response.status_code == 200
-    assert b"This item already has a pending or scheduled post." in response.data
+    assert (
+        b"This item already has a pending or scheduled post."
+        in response.data
+    )
 
     with app.app_context():
         posts = ScheduledPost.query.filter_by(
