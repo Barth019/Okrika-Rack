@@ -9,147 +9,662 @@
 
     <link
         rel="stylesheet"
-        href="{{ url_for('static', filename='css/style.css') }}"
+        href="{{ url_for('static', filename='css/dashboard.css') }}"
     >
+
+    <style>
+        .channels-page .main-content {
+            min-width: 0;
+        }
+
+        .channels-intro {
+            margin: 25px 0;
+        }
+
+        .channels-intro h2 {
+            margin: 0 0 8px;
+            color: #203b30;
+            font-size: 24px;
+        }
+
+        .channels-intro p {
+            margin: 0;
+            color: #78877e;
+            font-size: 13px;
+            line-height: 1.7;
+        }
+
+        .channels-panel {
+            max-width: 1000px;
+            padding: 25px;
+            border: 1px solid #e8eee9;
+            border-radius: 15px;
+            background: #fff;
+            box-shadow: 0 3px 14px rgba(29, 65, 46, 0.04);
+        }
+
+        .channels-section-heading {
+            margin: 0 0 8px;
+            color: #294638;
+            font-size: 16px;
+            font-weight: 750;
+        }
+
+        .channels-section-description {
+            margin: 0 0 20px;
+            color: #849087;
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+        .organization-form {
+            display: flex;
+            align-items: flex-end;
+            gap: 13px;
+        }
+
+        .organization-field {
+            display: flex;
+            flex: 1;
+            flex-direction: column;
+            gap: 8px;
+            min-width: 0;
+        }
+
+        .organization-field label {
+            color: #354b3e;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .organization-field select {
+            width: 100%;
+            padding: 13px;
+            border: 1px solid #dfe7e0;
+            border-radius: 9px;
+            outline: none;
+            background: #fff;
+            color: #253b30;
+            font-family: inherit;
+            font-size: 13px;
+        }
+
+        .organization-field select:focus {
+            border-color: #4b8061;
+            box-shadow: 0 0 0 3px rgba(75, 128, 97, 0.10);
+        }
+
+        .channels-primary-button {
+            min-height: 44px;
+            padding: 12px 19px;
+            border: 0;
+            border-radius: 9px;
+            background: #245c43;
+            color: #fff;
+            font-family: inherit;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .channels-primary-button:hover {
+            background: #194832;
+        }
+
+        .organization-summary {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+            margin: 28px 0 17px;
+        }
+
+        .organization-summary h2 {
+            margin: 0 0 5px;
+            color: #203b30;
+            font-size: 19px;
+        }
+
+        .organization-summary p {
+            margin: 0;
+            color: #849087;
+            font-size: 11px;
+        }
+
+        .channel-count {
+            flex-shrink: 0;
+            padding: 7px 12px;
+            border-radius: 20px;
+            background: #edf4ee;
+            color: #326448;
+            font-size: 11px;
+            font-weight: 750;
+        }
+
+        .channel-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 15px;
+        }
+
+        .channel-card {
+            min-width: 0;
+            padding: 20px;
+            border: 1px solid #e6ece7;
+            border-radius: 12px;
+            background: #fff;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .channel-card:hover {
+            border-color: #cbdccf;
+            box-shadow: 0 4px 14px rgba(29, 65, 46, 0.05);
+        }
+
+        .channel-card-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 17px;
+        }
+
+        .channel-identity {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 0;
+        }
+
+        .channel-icon {
+            display: flex;
+            flex-shrink: 0;
+            align-items: center;
+            justify-content: center;
+            width: 43px;
+            height: 43px;
+            border-radius: 12px;
+            background: #edf4ee;
+            color: #326448;
+            font-size: 18px;
+            font-weight: 800;
+        }
+
+        .channel-identity h3 {
+            overflow-wrap: anywhere;
+            margin: 0 0 5px;
+            color: #294638;
+            font-size: 14px;
+            font-weight: 750;
+        }
+
+        .channel-platform {
+            margin: 0;
+            color: #8a968e;
+            font-size: 10px;
+        }
+
+        .channel-status {
+            flex-shrink: 0;
+            padding: 6px 9px;
+            border-radius: 20px;
+            font-size: 9px;
+            font-weight: 750;
+        }
+
+        .channel-status.connected {
+            background: #e6f4e9;
+            color: #267244;
+        }
+
+        .channel-status.disconnected {
+            background: #fce9e7;
+            color: #a63d35;
+        }
+
+        .channel-details {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding-top: 13px;
+            border-top: 1px solid #edf0ed;
+        }
+
+        .channel-details-label {
+            color: #87938a;
+            font-size: 11px;
+        }
+
+        .queue-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: #53675a;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .queue-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #3d9b60;
+        }
+
+        .queue-status.paused .queue-dot {
+            background: #d49a36;
+        }
+
+        .queue-status.locked .queue-dot {
+            background: #9a7bc2;
+        }
+
+        .queue-status.disconnected .queue-dot {
+            background: #c65b51;
+        }
+
+        .channels-empty-state {
+            padding: 45px 20px;
+            border: 1px dashed #dce6de;
+            border-radius: 12px;
+            background: #f9fbf8;
+            text-align: center;
+        }
+
+        .channels-empty-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 50px;
+            height: 50px;
+            margin: 0 auto 15px;
+            border-radius: 14px;
+            background: #edf4ee;
+            color: #326448;
+            font-size: 22px;
+        }
+
+        .channels-empty-state h3 {
+            margin: 0 0 8px;
+            color: #294638;
+            font-size: 15px;
+        }
+
+        .channels-empty-state p {
+            max-width: 400px;
+            margin: 0 auto;
+            color: #849087;
+            font-size: 12px;
+            line-height: 1.7;
+        }
+
+        .channels-flashes {
+            margin-bottom: 20px;
+        }
+
+        .channels-flashes .flash-message {
+            padding: 12px 15px;
+            margin-bottom: 9px;
+            border-radius: 9px;
+            font-size: 12px;
+        }
+
+        .channels-flashes .flash-success {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .channels-flashes .flash-error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .channels-flashes .flash-warning {
+            background: #fff7df;
+            color: #94651e;
+        }
+
+        @media (max-width: 700px) {
+            .channels-page .main-content {
+                padding: 22px 15px;
+            }
+
+            .channels-page .topbar {
+                margin-bottom: 20px;
+            }
+
+            .channels-page .topbar h1 {
+                font-size: 23px;
+            }
+
+            .channels-intro {
+                margin: 18px 0;
+            }
+
+            .channels-intro h2 {
+                font-size: 20px;
+            }
+
+            .channels-panel {
+                padding: 18px 14px;
+                border-radius: 12px;
+            }
+
+            .organization-form {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .channels-primary-button {
+                width: 100%;
+            }
+
+            .channel-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .channel-card {
+                padding: 16px;
+            }
+
+            .organization-summary {
+                align-items: flex-start;
+            }
+        }
+
+        @media (max-width: 380px) {
+            .channel-card-header {
+                flex-direction: column;
+            }
+        }
+    </style>
 </head>
 
 <body>
-    <main class="container">
+    <div class="dashboard-layout channels-page">
 
-        <div class="brand">Okrika-Rack</div>
+        <aside class="sidebar">
+            <a href="{{ url_for('accounts.dashboard') }}" class="brand">
+                <span class="brand-icon">O</span>
+                Okrika-Rack
+            </a>
 
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="flash-message flash-{{ category }}">
-                        {{ message }}
-                    </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
+            <p class="sidebar-label">WORKSPACE</p>
 
-        <h1>Your social channels.</h1>
+            <nav class="sidebar-nav">
+                <a href="{{ url_for('accounts.dashboard') }}" class="nav-link">
+                    <span>▦</span> Overview
+                </a>
 
-        <p class="description">
-            Choose a Buffer organization to view its connected
-            social media channels.
-        </p>
+                <a href="{{ url_for('items.inventory') }}" class="nav-link">
+                    <span>▤</span> Inventory
+                </a>
 
-        {% if organizations %}
+                <a href="{{ url_for('items.add_item') }}" class="nav-link">
+                    <span>＋</span> Add product
+                </a>
 
-            <form method="GET"
-                  action="{{ url_for('scheduler.channels') }}">
+                <a href="{{ url_for('scheduler.channels') }}" class="nav-link active">
+                    <span>◷</span> Scheduling
+                </a>
 
-                <label for="organization_id">
-                    Select organization
-                </label>
+                <a href="{{ url_for('scheduler.post_history') }}" class="nav-link">
+                    <span>▣</span> Post history
+                </a>
 
-                <select
-                    id="organization_id"
-                    name="organization_id"
-                    required
-                >
-                    <option value="">Choose an organization</option>
+                <a href="{{ url_for('accounts.settings') }}" class="nav-link">
+                    <span>⚙</span> Settings
+                </a>
+</nav>
 
-                    {% for organization in organizations %}
-                        <option
-                            value="{{ organization.id }}"
-                            {% if selected_organization and
-                                selected_organization.id == organization.id %}
-                                selected
-                            {% endif %}
-                        >
-                            {{ organization.name }}
-                        </option>
-                    {% endfor %}
-                </select>
-
-                <button type="submit" class="connect-button">
-                    View Channels
-                </button>
-
-            </form>
-
-        {% else %}
-
-            <div class="connection-status">
-                <strong>No organizations found</strong>
-                <p>
-                    We couldn't find any Buffer organizations
-                    connected to your account.
-                </p>
+            <div class="sidebar-bottom">
+                <form action="{{ url_for('accounts.logout') }}" method="POST">
+                    <input
+                        type="hidden"
+                        name="csrf_token"
+                        value="{{ csrf_token() }}"
+                    >
+                    <button type="submit" class="logout-button">
+                        <span>↪</span> Sign out
+                    </button>
+                </form>
             </div>
+        </aside>
 
-        {% endif %}
+        <main class="main-content">
 
-        {% if selected_organization %}
+            <header class="topbar">
+                <div>
+                    <p class="eyebrow">BUFFER INTEGRATION</p>
+                    <h1>Social channels</h1>
+                </div>
+            </header>
 
-            <h2>{{ selected_organization.name }}</h2>
+            <section class="channels-intro">
+                <h2>Your social channels, connected.</h2>
+                <p>
+                    View your Buffer organizations and check the connection
+                    and publishing queue status of your social media channels.
+                </p>
+            </section>
 
-            {% if channels %}
-
-                <div class="inventory-list">
-
-                    {% for channel in channels %}
-
-                        <article class="inventory-card">
-
-                            <div class="inventory-card-header">
-                                <h2>
-                                    {{ channel.displayName or channel.name }}
-                                </h2>
-
-                                <span class="availability-badge available">
-                                    Connected
-                                </span>
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="channels-flashes">
+                        {% for category, message in messages %}
+                            <div class="flash-message flash-{{ category }}">
+                                {{ message }}
                             </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            <section class="channels-panel">
+
+                {% if organizations %}
+
+                    <h2 class="channels-section-heading">
+                        Buffer organization
+                    </h2>
+
+                    <p class="channels-section-description">
+                        Select an organization to see its connected social
+                        media channels.
+                    </p>
+
+                    <form
+                        method="GET"
+                        action="{{ url_for('scheduler.channels') }}"
+                        class="organization-form"
+                    >
+
+                        <div class="organization-field">
+                            <label for="organization_id">
+                                Select organization
+                            </label>
+
+                            <select
+                                id="organization_id"
+                                name="organization_id"
+                                required
+                            >
+                                <option value="">
+                                    Choose an organization
+                                </option>
+
+                                {% for organization in organizations %}
+                                    <option
+                                        value="{{ organization.id }}"
+                                        {% if selected_organization and
+                                            selected_organization.id == organization.id %}
+                                            selected
+                                        {% endif %}
+                                    >
+                                        {{ organization.name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <button
+                            type="submit"
+                            class="channels-primary-button"
+                        >
+                            View channels
+                        </button>
+
+                    </form>
+
+                {% else %}
+
+                    <div class="channels-empty-state">
+                        <div class="channels-empty-icon">◎</div>
+
+                        <h3>No organizations found</h3>
+
+                        <p>
+                            We couldn't find any Buffer organizations
+                            connected to your account. Check your Buffer
+                            connection and try again.
+                        </p>
+                    </div>
+
+                {% endif %}
+
+            </section>
+
+            {% if selected_organization %}
+
+                <section>
+                    <div class="organization-summary">
+                        <div>
+                            <h2>{{ selected_organization.name }}</h2>
+                            <p>Social channels in this organization</p>
+                        </div>
+
+                        {% if channels %}
+                            <span class="channel-count">
+                                {{ channels|length }}
+                                {% if channels|length == 1 %}
+                                    channel
+                                {% else %}
+                                    channels
+                                {% endif %}
+                            </span>
+                        {% endif %}
+                    </div>
+
+                    {% if channels %}
+
+                        <div class="channel-grid">
+
+                            {% for channel in channels %}
+
+                                <article class="channel-card">
+
+                                    <div class="channel-card-header">
+
+                                        <div class="channel-identity">
+
+                                            <div class="channel-icon">
+                                                {{ (channel.service or 'S')[0]|upper }}
+                                            </div>
+
+                                            <div>
+                                                <h3>
+                                                    {{ channel.displayName or channel.name }}
+                                                </h3>
+
+                                                <p class="channel-platform">
+                                                    {{ channel.service|title }}
+                                                </p>
+                                            </div>
+
+                                        </div>
+
+                                        {% if channel.isDisconnected %}
+                                            <span class="channel-status disconnected">
+                                                Disconnected
+                                            </span>
+                                        {% else %}
+                                            <span class="channel-status connected">
+                                                Connected
+                                            </span>
+                                        {% endif %}
+
+                                    </div>
+
+                                    <div class="channel-details">
+
+                                        <span class="channel-details-label">
+                                            Publishing queue
+                                        </span>
+
+                                        {% if channel.isDisconnected %}
+
+                                            <span class="queue-status disconnected">
+                                                <span class="queue-dot"></span>
+                                                Disconnected
+                                            </span>
+
+                                        {% elif channel.isQueuePaused %}
+
+                                            <span class="queue-status paused">
+                                                <span class="queue-dot"></span>
+                                                Paused
+                                            </span>
+
+                                        {% elif channel.isLocked %}
+
+                                            <span class="queue-status locked">
+                                                <span class="queue-dot"></span>
+                                                Locked
+                                            </span>
+
+                                        {% else %}
+
+                                            <span class="queue-status">
+                                                <span class="queue-dot"></span>
+                                                Active
+                                            </span>
+
+                                        {% endif %}
+
+                                    </div>
+
+                                </article>
+
+                            {% endfor %}
+
+                        </div>
+
+                    {% else %}
+
+                        <div class="channels-empty-state">
+                            <div class="channels-empty-icon">▤</div>
+
+                            <h3>No channels found</h3>
 
                             <p>
-                                Platform: {{ channel.service|title }}
+                                This organization doesn't currently have
+                                any social media channels available.
                             </p>
+                        </div>
 
-                            {% if channel.isDisconnected %}
-                                <p>Connection: Disconnected</p>
-                            {% elif channel.isQueuePaused %}
-                                <p>Queue: Paused</p>
-                            {% elif channel.isLocked %}
-                                <p>Queue: Locked</p>
-                            {% else %}
-                                <p>Queue: Active</p>
-                            {% endif %}
-
-                        </article>
-
-                    {% endfor %}
-
-                </div>
-
-            {% else %}
-
-                <div class="empty-inventory">
-                    <h2>No channels found.</h2>
-                    <p>
-                        This organization doesn't currently
-                        have any channels available.
-                    </p>
-                </div>
+                    {% endif %}
+                </section>
 
             {% endif %}
 
-        {% endif %}
+            <footer class="dashboard-footer" style="margin-top: 35px;">
+                <span>Okrika-Rack</span>
+                <span>Built for smarter thrift selling.</span>
+            </footer>
 
-        <p>
-            <a href="{{ url_for('accounts.dashboard') }}">
-                Back to dashboard
-            </a>
-        </p>
-
-        <p>
-            <a href="{{ url_for('items.inventory') }}">
-                View inventory
-            </a>
-        </p>
-
-    </main>
+        </main>
+    </div>
 </body>
 </html>

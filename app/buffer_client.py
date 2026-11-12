@@ -199,6 +199,64 @@ def delete_buffer_post(access_token, post_id):
     return deleted_id
 
 
+def get_buffer_post(access_token, post_id):
+    """Retrieve the current status and publication details of a Buffer post."""
+
+    if not access_token:
+        raise ValueError("A Buffer access token is required.")
+
+    if not post_id:
+        raise ValueError("A Buffer post ID is required.")
+
+    query = """
+    query GetPost($input: PostInput!) {
+        post(input: $input) {
+            id
+            status
+            sentAt
+            dueAt
+            externalLink
+            channelId
+            channelService
+            error {
+                message
+                supportUrl
+            }
+        }
+    }
+    """
+
+    variables = {
+        "input": {
+            "id": post_id,
+        }
+    }
+
+    data = buffer_graphql_request(
+        access_token,
+        query,
+        variables,
+    )
+
+    post = data.get("post")
+
+    if not isinstance(post, dict):
+        raise BufferAPIError(
+            "Buffer returned an invalid post lookup response."
+        )
+
+    if post.get("id") != post_id:
+        raise BufferAPIError(
+            "Buffer returned an unexpected post ID."
+        )
+
+    if not post.get("status"):
+        raise BufferAPIError(
+            "Buffer returned a post without a status."
+        )
+
+    return post
+
 def exchange_authorization_code(code, code_verifier, config):
     """Exchange an OAuth authorization code for Buffer tokens."""
 

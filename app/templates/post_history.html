@@ -1,0 +1,832 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Post History | Okrika-Rack</title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='css/dashboard.css') }}"
+    >
+
+    <style>
+        .post-history-mobile-header {
+            display: none;
+        }
+
+        .post-history-page .main-content {
+            min-width: 0;
+        }
+
+        .post-history-page .history-mobile-nav {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            width: 100%;
+            overflow-x: auto;
+            padding: 4px 0 10px;
+            scrollbar-width: none;
+            -webkit-overflow-scrolling: touch;
+            justify-content: flex-start;
+            scroll-behavior: auto;
+        }
+
+        .post-history-page .history-mobile-nav::-webkit-scrollbar {
+            display: none;
+        }
+
+        .post-history-page .history-mobile-nav a {
+            display: inline-flex;
+            flex-shrink: 0;
+            align-items: center;
+            gap: 6px;
+            padding: 9px 11px;
+            border-radius: 8px;
+            color: #68736b;
+            font-size: 11px;
+            font-weight: 650;
+            text-decoration: none;
+            white-space: nowrap;
+        }
+
+        .post-history-page .history-mobile-nav a.active {
+            background: #e8f0e7;
+            color: #294333;
+        }
+
+        .post-history-page .history-mobile-nav a span {
+            font-size: 14px;
+        }
+
+        .post-history-page .history-mobile-brand {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 0 0 12px;
+            border-bottom: 1px solid #e6ebe5;
+        }
+
+        .post-history-page .history-mobile-brand .brand-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 34px;
+            height: 34px;
+            border-radius: 10px;
+            background: #294333;
+            color: white;
+            font-size: 17px;
+            font-weight: 800;
+        }
+
+        .post-history-page .history-mobile-brand strong {
+            color: #294333;
+            font-size: 15px;
+            font-weight: 800;
+        }
+
+        .post-history-page .history-mobile-logout {
+            margin-left: auto;
+            border: 0;
+            background: transparent;
+            color: #68736b;
+            font-family: inherit;
+            font-size: 11px;
+            font-weight: 650;
+            cursor: pointer;
+        }
+
+        /* WhatsApp ordering link */
+        .history-whatsapp {
+            margin-top: 15px;
+            padding: 13px;
+            border: 1px solid #dce9dc;
+            border-radius: 10px;
+            background: #f7faf6;
+        }
+
+        .history-whatsapp-heading {
+            margin: 0 0 6px;
+            color: #294333;
+            font-size: 12px;
+            font-weight: 750;
+        }
+
+        .history-whatsapp-note {
+            margin: 0 0 10px;
+            color: #718076;
+            font-size: 11px;
+            line-height: 1.6;
+        }
+
+        .history-whatsapp-url {
+            display: block;
+            width: 100%;
+            min-height: 64px;
+            margin-bottom: 11px;
+            padding: 9px 10px;
+            border: 1px solid #e0e8df;
+            border-radius: 7px;
+            background: #ffffff;
+            color: #326448;
+            font-family: inherit;
+            font-size: 11px;
+            line-height: 1.6;
+            overflow-wrap: anywhere;
+            word-break: break-all;
+            resize: none;
+            box-sizing: border-box;
+            outline: none;
+        }
+
+        .history-copy-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            min-height: 36px;
+            padding: 9px 13px;
+            border: 0;
+            border-radius: 7px;
+            background: #294333;
+            color: #fff;
+            font-family: inherit;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        .history-copy-button:hover {
+            background: #3d624a;
+        }
+
+        .history-copy-button:disabled {
+            opacity: 0.7;
+            cursor: default;
+        }
+
+        .history-whatsapp-unavailable {
+            margin-top: 12px;
+            padding: 11px 13px;
+            border: 1px dashed #dce4dc;
+            border-radius: 9px;
+            color: #718076;
+            font-size: 11px;
+            line-height: 1.6;
+        }
+
+        @media (max-width: 700px) {
+            .post-history-page .sidebar {
+                display: none !important;
+            }
+
+            .post-history-page .post-history-mobile-header {
+                display: block;
+                padding: 13px 15px 0;
+                background: #fff;
+                border-bottom: 1px solid #e6ebe5;
+            }
+
+            .post-history-page .main-content {
+                width: 100%;
+                min-width: 0;
+                padding: 18px 15px 25px;
+            }
+
+            .post-history-page .topbar {
+                align-items: center;
+                margin-bottom: 20px;
+            }
+
+            .post-history-page .topbar h1 {
+                font-size: 23px;
+            }
+
+            .post-history-page .topbar .secondary-button {
+                display: none;
+            }
+
+            .post-history-page .welcome-section {
+                align-items: flex-start;
+                margin-bottom: 20px;
+            }
+
+            .post-history-page .welcome-section h2 {
+                font-size: 19px;
+            }
+
+            .post-history-page .stats-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 10px;
+                margin-bottom: 20px;
+            }
+
+            .post-history-page .stat-card {
+                min-width: 0;
+                padding: 14px;
+            }
+
+            .post-history-page .panel {
+                min-width: 0;
+                padding: 15px 12px;
+            }
+
+            .post-history-page .panel-header {
+                align-items: flex-start;
+                flex-direction: column;
+                gap: 14px;
+            }
+
+            .post-history-page .panel-header form,
+            .post-history-page .panel-header button {
+                width: 100%;
+            }
+
+            .post-history-page .history-filters {
+                display: flex;
+                flex-wrap: nowrap;
+                gap: 7px;
+                max-width: 100%;
+                overflow-x: auto;
+                padding: 4px 0 12px;
+                scrollbar-width: none;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .post-history-page .history-filters::-webkit-scrollbar {
+                display: none;
+            }
+
+            .post-history-page .history-filter {
+                flex-shrink: 0;
+                white-space: nowrap;
+            }
+
+            .post-history-page .history-card {
+                display: flex;
+                flex-direction: column;
+                gap: 13px;
+                padding: 13px 0;
+            }
+
+            .post-history-page .history-product {
+                min-width: 0;
+                align-items: flex-start;
+                gap: 11px;
+            }
+
+            .post-history-page .history-details {
+                min-width: 0;
+                overflow-wrap: anywhere;
+            }
+
+            .post-history-page .history-status-area {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 10px;
+                width: 100%;
+                padding-left: 0;
+            }
+
+            .post-history-page .history-error {
+                overflow-wrap: anywhere;
+            }
+
+            .post-history-page .dashboard-footer {
+                gap: 8px;
+                flex-wrap: wrap;
+            }
+
+            .history-whatsapp {
+                padding: 12px;
+            }
+
+            .history-copy-button {
+                width: 100%;
+            }
+        }
+
+        @media (max-width: 380px) {
+            .post-history-page .main-content {
+                padding-right: 11px;
+                padding-left: 11px;
+            }
+
+            .post-history-page .stat-card {
+                padding: 11px;
+            }
+
+            .post-history-page .history-image,
+            .post-history-page .history-image-placeholder {
+                width: 48px;
+                height: 48px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="dashboard-layout post-history-page">
+
+        <aside class="sidebar">
+
+            <a href="{{ url_for('accounts.dashboard') }}" class="brand">
+                <span class="brand-icon">O</span>
+                Okrika-Rack
+            </a>
+
+            <p class="sidebar-label">WORKSPACE</p>
+
+            <nav class="sidebar-nav">
+
+                <a href="{{ url_for('accounts.dashboard') }}" class="nav-link">
+                    <span>▦</span> Overview
+                </a>
+
+                <a href="{{ url_for('items.inventory') }}" class="nav-link">
+                    <span>▤</span> Inventory
+                </a>
+
+                <a href="{{ url_for('items.add_item') }}" class="nav-link">
+                    <span>＋</span> Add product
+                </a>
+
+                <a href="{{ url_for('scheduler.channels') }}" class="nav-link">
+                    <span>◷</span> Scheduling
+                </a>
+
+                <a href="{{ url_for('scheduler.post_history') }}"
+                   class="nav-link active">
+                    <span>▣</span> Post history
+                </a>
+
+
+                <a href="{{ url_for('accounts.settings') }}" class="nav-link">
+                    <span>⚙</span> Settings
+                </a>
+</nav>
+
+            <div class="sidebar-bottom">
+                <form action="{{ url_for('accounts.logout') }}" method="POST">
+                    <input
+                        type="hidden"
+                        name="csrf_token"
+                        value="{{ csrf_token() }}"
+                    >
+
+                    <button type="submit" class="logout-button">
+                        ↪ Log out
+                    </button>
+                </form>
+            </div>
+
+        </aside>
+
+        <main class="main-content">
+
+            <header class="post-history-mobile-header">
+
+                <div class="history-mobile-brand">
+
+                    <span class="brand-icon">O</span>
+
+                    <strong>Okrika-Rack</strong>
+
+                    <form
+                        action="{{ url_for('accounts.logout') }}"
+                        method="POST"
+                        style="margin-left:auto;"
+                    >
+                        <input
+                            type="hidden"
+                            name="csrf_token"
+                            value="{{ csrf_token() }}"
+                        >
+
+                        <button
+                            type="submit"
+                            class="history-mobile-logout"
+                        >
+                            ↪ Sign out
+                        </button>
+                    </form>
+
+                </div>
+
+                <nav class="history-mobile-nav">
+
+                    <a href="{{ url_for('accounts.dashboard') }}">
+                        <span>▦</span> Overview
+                    </a>
+
+                    <a href="{{ url_for('items.inventory') }}">
+                        <span>▤</span> Inventory
+                    </a>
+
+                    <a href="{{ url_for('items.add_item') }}">
+                        <span>＋</span> Add product
+                    </a>
+
+                    <a href="{{ url_for('scheduler.channels') }}">
+                        <span>◷</span> Scheduling
+                    </a>
+
+                    <a
+                        href="{{ url_for('scheduler.post_history') }}"
+                        class="active"
+                    >
+                        <span>▣</span> Post history
+                    </a>
+
+
+                    <a href="{{ url_for('accounts.settings') }}">
+                        <span>⚙</span> Settings
+                    </a>
+</nav>
+
+            </header>
+
+            <header class="topbar">
+
+                <div>
+                    <p class="eyebrow">CONTENT MANAGEMENT</p>
+                    <h1>Post history</h1>
+                </div>
+
+                <a
+                    href="{{ url_for('accounts.dashboard') }}"
+                    class="secondary-button"
+                >
+                    Back to dashboard
+                </a>
+
+            </header>
+
+            <section class="welcome-section">
+
+                <div>
+                    <h2>Your publishing activity</h2>
+
+                    <p>
+                        Track scheduled, published and cancelled product posts.
+                    </p>
+                </div>
+
+            </section>
+
+            <section class="stats-grid">
+
+                <article class="stat-card">
+                    <div class="stat-top">
+                        <span>All posts</span>
+                    </div>
+
+                    <strong>{{ post_counts.all }}</strong>
+
+                    <small>Total tracked posts</small>
+                </article>
+
+                <article class="stat-card">
+                    <div class="stat-top">
+                        <span>Scheduled</span>
+                    </div>
+
+                    <strong>{{ post_counts.scheduled }}</strong>
+
+                    <small>Waiting to publish</small>
+                </article>
+
+                <article class="stat-card">
+                    <div class="stat-top">
+                        <span>Published</span>
+                    </div>
+
+                    <strong>{{ post_counts.published }}</strong>
+
+                    <small>Recorded as published</small>
+                </article>
+
+                <article class="stat-card">
+                    <div class="stat-top">
+                        <span>Cancelled</span>
+                    </div>
+
+                    <strong>{{ post_counts.cancelled }}</strong>
+
+                    <small>Removed from scheduling</small>
+                </article>
+
+            </section>
+
+            <section class="panel">
+
+                <div class="panel-header">
+
+                    <div>
+                        <h3>All publishing activity</h3>
+
+                        <p>
+                            Check your latest Buffer publishing statuses
+                            and review your post history.
+                        </p>
+                    </div>
+
+                    <form
+                        action="{{ url_for('scheduler.sync_posts') }}"
+                        method="POST"
+                    >
+                        <input
+                            type="hidden"
+                            name="csrf_token"
+                            value="{{ csrf_token() }}"
+                        >
+
+                        <input
+                            type="hidden"
+                            name="status"
+                            value="{{ selected_status }}"
+                        >
+
+                        <button type="submit" class="primary-button">
+                            ↻ Sync with Buffer
+                        </button>
+                    </form>
+
+                </div>
+
+                <nav class="history-filters">
+
+                    {% set filters = [
+                        ('all', 'All', post_counts.all),
+                        ('pending', 'Pending', post_counts.pending),
+                        ('scheduled', 'Scheduled', post_counts.scheduled),
+                        ('published', 'Published', post_counts.published),
+                        ('cancelled', 'Cancelled', post_counts.cancelled),
+                        ('failed', 'Failed', post_counts.failed)
+                    ] %}
+
+                    {% for value, label, count in filters %}
+
+                        <a
+                            href="{{ url_for('scheduler.post_history', status=value) }}"
+                            class="history-filter {% if selected_status == value %}active{% endif %}"
+                        >
+                            {{ label }}
+                            <span>{{ count }}</span>
+                        </a>
+
+                    {% endfor %}
+
+                </nav>
+
+                {% if posts %}
+
+                    <div class="history-list">
+
+                        {% for post in posts %}
+
+                            <article class="history-card">
+
+                                <div class="history-product">
+
+                                    {% if post.item.image_url %}
+
+                                        <img
+                                            src="{{ post.item.image_url }}"
+                                            alt="{{ post.item.name }}"
+                                            class="history-image"
+                                        >
+
+                                    {% else %}
+
+                                        <div class="history-image-placeholder">
+                                            {{ post.item.name[0]|upper }}
+                                        </div>
+
+                                    {% endif %}
+
+                                    <div class="history-details">
+
+                                        <h4>{{ post.item.name }}</h4>
+
+                                        <span class="history-channel">
+                                            {{ post.buffer_channel_service|capitalize if post.buffer_channel_service else "Channel not recorded" }}
+                                        </span>
+
+                                        {% if post.status == "published" and post.published_at %}
+
+                                            <p>
+                                                Published:
+                                                {{ post.published_at.strftime('%d %b %Y, %I:%M %p') }}
+                                            </p>
+
+                                        {% else %}
+
+                                            <p>
+                                                {{ "Originally scheduled for:" if post.status == "cancelled" else "Scheduled for:" }}
+                                                {{ post.scheduled_at.strftime('%d %b %Y, %I:%M %p') }}
+                                            </p>
+
+                                        {% endif %}
+
+                                        <p class="history-caption">
+                                            {{ post.caption }}
+                                        </p>
+
+                                    </div>
+
+                                </div>
+
+                                <div class="history-status-area">
+
+                                    <span class="status-badge status-{{ post.status }}">
+                                        {{ post.status|title }}
+                                    </span>
+
+                                    <small>
+                                        Created:
+                                        {{ post.created_at.strftime('%d %b %Y') }}
+                                    </small>
+
+                                </div>
+
+                                {% if post.item and post.item.availability == "sold" %}
+
+                                    <div class="history-whatsapp history-whatsapp-unavailable">
+
+                                        <h5 class="history-whatsapp-heading">
+                                            WhatsApp ordering link unavailable
+                                        </h5>
+
+                                        <p class="history-whatsapp-note">
+                                            This item has been marked as sold. Its ordering link is unavailable.
+                                        </p>
+
+                                    </div>
+
+                                {% elif whatsapp_links.get(post.id) %}
+
+                                    <div class="history-whatsapp">
+
+                                        <h5 class="history-whatsapp-heading">
+                                            WhatsApp ordering link
+                                        </h5>
+
+                                        {% if post.buffer_channel_service and post.buffer_channel_service|lower == "instagram" %}
+
+                                            <p class="history-whatsapp-note">
+                                                Copy this link and paste it as
+                                                your Instagram first comment.
+                                            </p>
+
+                                        {% else %}
+
+                                            <p class="history-whatsapp-note">
+                                                Buyers can use this link to
+                                                contact you about this product.
+                                            </p>
+
+                                        {% endif %}
+
+                                        <textarea
+                                            class="history-whatsapp-url"
+                                            readonly
+                                            rows="3"
+                                            aria-label="WhatsApp ordering link"
+                                        >{{ whatsapp_links[post.id] }}</textarea>
+
+                                        <button
+                                            type="button"
+                                            class="history-copy-button"
+                                            data-copy-text="{{ whatsapp_links[post.id] }}"
+                                        >
+                                            Copy WhatsApp link
+                                        </button>
+
+                                    </div>
+
+                                {% endif %}
+
+                                {% if post.error_message %}
+
+                                    <div class="history-error">
+                                        <strong>Posting error:</strong>
+                                        {{ post.error_message }}
+                                    </div>
+
+                                {% endif %}
+
+                            </article>
+
+                        {% endfor %}
+
+                    </div>
+
+                {% else %}
+
+                    <div class="empty-state">
+
+                        <div class="empty-icon">▣</div>
+
+                        <h4>No posts found</h4>
+
+                        <p>
+                            There are no posts in this category yet.
+                            Your publishing activity will appear here.
+                        </p>
+
+                        <a href="{{ url_for('scheduler.post_history') }}">
+                            View all posts
+                        </a>
+
+                    </div>
+
+                {% endif %}
+
+            </section>
+
+            <footer class="dashboard-footer">
+                <span>Okrika-Rack</span>
+                <span>Built for smarter thrift selling.</span>
+            </footer>
+
+        </main>
+
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+
+            const navigation = document.querySelector(
+                ".history-mobile-nav"
+            );
+
+            if (navigation) {
+                navigation.scrollLeft = 0;
+            }
+
+            document.querySelectorAll(".history-copy-button").forEach(
+                function (button) {
+
+                    button.addEventListener("click", async function () {
+
+                        const text = button.dataset.copyText;
+                        const originalText = "Copy WhatsApp link";
+
+                        try {
+
+                            if (navigator.clipboard && window.isSecureContext) {
+                                await navigator.clipboard.writeText(text);
+                            } else {
+
+                                const temporaryInput = document.createElement(
+                                    "textarea"
+                                );
+
+                                temporaryInput.value = text;
+                                temporaryInput.style.position = "fixed";
+                                temporaryInput.style.opacity = "0";
+
+                                document.body.appendChild(temporaryInput);
+
+                                temporaryInput.select();
+
+                                const copied = document.execCommand("copy");
+
+                                temporaryInput.remove();
+
+                                if (!copied) {
+                                    throw new Error("Copy failed");
+                                }
+                            }
+
+                            button.textContent = "Copied!";
+                            button.disabled = true;
+
+                            setTimeout(function () {
+                                button.textContent = originalText;
+                                button.disabled = false;
+                            }, 2000);
+
+                        } catch (error) {
+
+                            button.textContent = "Copy failed";
+
+                            setTimeout(function () {
+                                button.textContent = originalText;
+                            }, 2000);
+
+                        }
+                    });
+                }
+            );
+        });
+    </script>
+
+</body>
+</html>

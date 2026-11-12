@@ -1,3 +1,4 @@
+
 import pytest
 
 import app.buffer_client as buffer_client
@@ -68,9 +69,7 @@ def test_instagram_post_sends_correct_payload(monkeypatch):
     assert post_input["needsApproval"] is False
 
 
-def test_instagram_post_without_image_is_rejected(
-    monkeypatch,
-):
+def test_instagram_post_without_image_is_rejected(monkeypatch):
     def unexpected_request(*args, **kwargs):
         raise AssertionError(
             "Buffer must not be called without an Instagram image."
@@ -119,4 +118,146 @@ def test_non_https_image_url_is_rejected(monkeypatch):
             due_at="2099-01-01T11:00:00Z",
             image_url="http://example.com/image.jpg",
             channel_service="instagram",
+        )
+
+
+# --------------------------------------------------
+# BUFFER POST LOOKUP TESTS
+# --------------------------------------------------
+
+def test_get_buffer_post_returns_post_details(monkeypatch):
+    captured = {}
+
+    mock_post = {
+        "id": "mock-buffer-post-123",
+        "status": "sent",
+        "sentAt": "2099-01-01T11:00:00Z",
+        "dueAt": "2099-01-01T10:00:00Z",
+        "externalLink": "https://instagram.com/p/example",
+        "channelId": "mock-channel-123",
+        "channelService": "instagram",
+        "error": None,
+    }
+
+    def mock_graphql_request(access_token, query, variables=None):
+        captured["access_token"] = access_token
+        captured["query"] = query
+        captured["variables"] = variables
+
+        return {"post": mock_post}
+
+    monkeypatch.setattr(
+        buffer_client,
+        "buffer_graphql_request",
+        mock_graphql_request,
+    )
+
+    result = buffer_client.get_buffer_post(
+        "mock-access-token",
+        "mock-buffer-post-123",
+    )
+
+    assert result == mock_post
+    assert result["status"] == "sent"
+    assert result["sentAt"] == "2099-01-01T11:00:00Z"
+
+    assert captured["access_token"] == "mock-access-token"
+
+    assert captured["variables"] == {
+        "input": {
+            "id": "mock-buffer-post-123",
+        }
+    }
+
+    assert "GetPost" in captured["query"]
+
+
+def test_get_buffer_post_rejects_missing_access_token():
+    with pytest.raises(
+        ValueError,
+        match="Buffer access token is required",
+    ):
+        buffer_client.get_buffer_post(
+            None,
+            "mock-buffer-post-123",
+        )
+
+
+def test_get_buffer_post_rejects_missing_post_id():
+    with pytest.raises(
+        ValueError,
+        match="Buffer post ID is required",
+    ):
+        buffer_client.get_buffer_post(
+            "mock-access-token",
+            "",
+        )
+
+
+def test_get_buffer_post_rejects_invalid_response(monkeypatch):
+    def mock_graphql_request(*args, **kwargs):
+        return {"post": None}
+
+    monkeypatch.setattr(
+        buffer_client,
+        "buffer_graphql_request",
+        mock_graphql_request,
+    )
+
+    with pytest.raises(
+        buffer_client.BufferAPIError,
+        match="invalid post lookup response",
+    ):
+        buffer_client.get_buffer_post(
+            "mock-access-token",
+            "mock-buffer-post-123",
+        )
+
+
+def test_get_buffer_post_rejects_unexpected_post_id(monkeypatch):
+    def mock_graphql_request(*args, **kwargs):
+        return {
+            "post": {
+                "id": "different-post-456",
+                "status": "sent",
+            }
+        }
+
+    monkeypatch.setattr(
+        buffer_client,
+        "buffer_graphql_request",
+        mock_graphql_request,
+    )
+
+    with pytest.raises(
+        buffer_client.BufferAPIError,
+        match="unexpected post ID",
+    ):
+        buffer_client.get_buffer_post(
+            "mock-access-token",
+            "mock-buffer-post-123",
+        )
+
+
+def test_get_buffer_post_rejects_missing_status(monkeypatch):
+    def mock_graphql_request(*args, **kwargs):
+        return {
+            "post": {
+                "id": "mock-buffer-post-123",
+            }
+        }
+
+    monkeypatch.setattr(
+        buffer_client,
+        "buffer_graphql_request",
+        mock_graphql_request,
+    )
+
+    with pytest.raises(
+        buffer_client.BufferAPIError,
+        match="without a status",
+    ):
+        buffer_client.get_buffer_post(
+            "mock-access-token",
+            "mock-buffer-post-123",
         )

@@ -4,9 +4,9 @@ import app.items as items_module
 from app.models import db, Seller, Item, ScheduledPost, BufferConnection
 
 
-def create_seller_and_item():
+def create_seller_and_item(email="test@example.com"):
     seller = Seller(
-        email="test@example.com",
+        email=email,
         password_hash="test-password-hash",
     )
     db.session.add(seller)
@@ -32,10 +32,13 @@ def login_test_seller(client, seller_id):
         session["_fresh"] = True
 
 
-def create_buffer_connection(seller_id):
+def create_buffer_connection(
+    seller_id,
+    buffer_account_id="test-buffer-account",
+):
     connection = BufferConnection(
         seller_id=seller_id,
-        buffer_account_id="test-buffer-account",
+        buffer_account_id=buffer_account_id,
         access_token_encrypted="test-access-token",
         refresh_token_encrypted="test-refresh-token",
     )

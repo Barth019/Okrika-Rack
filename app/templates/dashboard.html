@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,89 +9,317 @@
 
     <link
         rel="stylesheet"
-        href="{{ url_for('static', filename='css/style.css') }}"
+        href="{{ url_for('static', filename='css/dashboard.css') }}"
     >
 </head>
 
 <body>
-    <main class="container">
+    <div class="dashboard-layout">
 
-        <div class="brand">Okrika-Rack</div>
-
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="flash-message flash-{{ category }}">
-                        {{ message }}
-                    </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-
-        <h1>Your selling<br>workspace.</h1>
-
-        <p class="description">
-            Welcome back, {{ current_user.email }}.
-            Manage your thrift inventory and keep your
-            social media schedule aligned with available stock.
-        </p>
-
-        {% if buffer_connection %}
-
-            <div class="connection-status">
-                <strong>✓ Buffer Connected</strong>
-
-                <p>Your Buffer account is connected.</p>
-
-                {% if buffer_connection.email %}
-                    <p class="connection-email">
-                        {{ buffer_connection.email }}
-                    </p>
-                {% endif %}
-
-                <a
-                    href="{{ url_for('scheduler.channels') }}"
-                    class="connect-button"
-                >
-                    Manage Social Channels
-                </a>
-            </div>
-
-        {% else %}
-
-            <div class="connection-status">
-                <strong>Buffer Not Connected</strong>
-                <p>Connect your Buffer account to get started.</p>
-            </div>
-
-            <a
-                href="{{ url_for('auth.connect_buffer') }}"
-                class="connect-button"
-            >
-                Connect Buffer
+        <aside class="sidebar">
+            <a href="{{ url_for('accounts.dashboard') }}" class="brand">
+                <span class="brand-icon">O</span>
+                Okrika-Rack
             </a>
 
-        {% endif %}
+            <p class="sidebar-label">WORKSPACE</p>
 
-        <p class="note">
-            Your inventory workspace is being prepared.
-        </p>
+            <nav class="sidebar-nav">
+                <a href="{{ url_for('accounts.dashboard') }}" class="nav-link active">
+                    <span>▦</span> Overview
+                </a>
 
-        <form
-            action="{{ url_for('accounts.logout') }}"
-            method="POST"
-        >
-            <input
-                type="hidden"
-                name="csrf_token"
-                value="{{ csrf_token() }}"
-            >
+                <a href="{{ url_for('items.inventory') }}" class="nav-link">
+                    <span>▤</span> Inventory
+                </a>
 
-            <button type="submit" class="logout-button">
-                Log out
-            </button>
-        </form>
+                <a href="{{ url_for('items.add_item') }}" class="nav-link">
+                    <span>＋</span> Add product
+                </a>
 
-    </main>
+                <a href="{{ url_for('scheduler.channels') }}" class="nav-link">
+                    <span>◷</span> Scheduling
+                </a>
+
+                <a href="{{ url_for('scheduler.post_history') }}" class="nav-link">
+                    <span>▣</span> Post history
+                </a>
+
+                <a href="{{ url_for('accounts.settings') }}" class="nav-link">
+                    <span>⚙</span> Settings
+                </a>
+            </nav>
+
+            <div class="sidebar-bottom">
+                <div class="sidebar-buffer">
+                    <span class="status-dot"></span>
+                    {% if buffer_connection %}
+                        Buffer connected
+                    {% else %}
+                        Buffer not connected
+                    {% endif %}
+                </div>
+
+                <form action="{{ url_for('accounts.logout') }}" method="POST">
+                    <input
+                        type="hidden"
+                        name="csrf_token"
+                        value="{{ csrf_token() }}"
+                    >
+                    <button type="submit" class="logout-button">
+                        ↪ Log out
+                    </button>
+                </form>
+            </div>
+        </aside>
+
+        <main class="main-content">
+
+            <header class="topbar">
+                <div>
+                    <p class="eyebrow">YOUR SELLING WORKSPACE</p>
+                    <h1>Dashboard</h1>
+                </div>
+
+                <div class="user-profile">
+                    <div class="avatar">
+                        {{ current_user.email[0]|upper }}
+                    </div>
+                    <div class="user-details">
+                        <strong>{{ current_user.email }}</strong>
+                        <span>Seller account</span>
+                    </div>
+                </div>
+            </header>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="flash-message flash-{{ category }}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <section class="welcome-section">
+                <div>
+                    <h2>Welcome back!</h2>
+                    <p>
+                        Here's what's happening with your thrift business.
+                    </p>
+                </div>
+
+                <a href="{{ url_for('items.add_item') }}" class="primary-button">
+                    + Add new product
+                </a>
+            </section>
+
+            <section class="stats-grid">
+
+                <article class="stat-card">
+                    <div class="stat-top">
+                        <span>Total products</span>
+                        <span class="stat-icon">▤</span>
+                    </div>
+                    <strong>{{ inventory_stats.total }}</strong>
+                    <small>Products in your inventory</small>
+                </article>
+
+                <article class="stat-card">
+                    <div class="stat-top">
+                        <span>Available</span>
+                        <span class="stat-icon green">✓</span>
+                    </div>
+                    <strong>{{ inventory_stats.available }}</strong>
+                    <small>Ready to be advertised</small>
+                </article>
+
+                <article class="stat-card">
+                    <div class="stat-top">
+                        <span>Sold products</span>
+                        <span class="stat-icon orange">↗</span>
+                    </div>
+                    <strong>{{ inventory_stats.sold }}</strong>
+                    <small>Successfully marked as sold</small>
+                </article>
+
+                <article class="stat-card">
+                    <div class="stat-top">
+                        <span>Scheduled posts</span>
+                        <span class="stat-icon purple">◷</span>
+                    </div>
+                    <strong>{{ post_stats.scheduled }}</strong>
+                    <small>Posts waiting to be published</small>
+                </article>
+
+            </section>
+
+            <section class="content-grid">
+
+                <div class="panel activity-panel">
+                    <div class="panel-header">
+                        <div>
+                            <h3>Recent activity</h3>
+                            <p>Your latest scheduled post activity</p>
+                        </div>
+
+                        <a href="{{ url_for('scheduler.channels') }}">
+                            Manage channels
+                        </a>
+                    </div>
+
+                    {% if recent_posts %}
+
+                        <div class="activity-list">
+
+                            {% for post in recent_posts %}
+                                <div class="activity-item">
+
+                                    <div class="activity-product">
+                                        {% if post.item.image_url %}
+                                            <img
+                                                src="{{ post.item.image_url }}"
+                                                alt="{{ post.item.name }}"
+                                                class="activity-product-image"
+                                            >
+                                        {% else %}
+                                            <div class="product-placeholder">
+                                                {{ post.item.name[0]|upper }}
+                                            </div>
+                                        {% endif %}
+
+                                        <div class="activity-details">
+                                            <strong>
+                                                {{ post.item.name }}
+                                            </strong>
+
+                                            <span>
+                                                {{ post.scheduled_at.strftime('%d %b %Y, %I:%M %p') }}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <span class="status-badge status-{{ post.status }}">
+                                        {{ post.status|title }}
+                                    </span>
+
+                                </div>
+                            {% endfor %}
+
+                        </div>
+
+                    {% else %}
+
+                        <div class="empty-state">
+                            <div class="empty-icon">◷</div>
+                            <h4>No post activity yet</h4>
+                            <p>
+                                Schedule your first product post to see
+                                your activity here.
+                            </p>
+
+                            <a href="{{ url_for('scheduler.channels') }}">
+                                Get started
+                            </a>
+                        </div>
+
+                    {% endif %}
+                </div>
+
+                <div class="panel performance-panel">
+                    <div class="panel-header">
+                        <div>
+                            <h3>Post overview</h3>
+                            <p>Your scheduling statistics</p>
+                        </div>
+                    </div>
+
+                    <div class="performance-list">
+
+                        <div class="performance-row">
+                            <span><i class="dot pending"></i> Pending</span>
+                            <strong>{{ post_stats.pending }}</strong>
+                        </div>
+
+                        <div class="performance-row">
+                            <span><i class="dot scheduled"></i> Scheduled</span>
+                            <strong>{{ post_stats.scheduled }}</strong>
+                        </div>
+
+                        <div class="performance-row">
+                            <span><i class="dot published"></i> Published</span>
+                            <strong>{{ post_stats.published }}</strong>
+                        </div>
+
+                        <div class="performance-row">
+                            <span><i class="dot cancelled"></i> Cancelled</span>
+                            <strong>{{ post_stats.cancelled }}</strong>
+                        </div>
+
+                        <div class="performance-row">
+                            <span><i class="dot failed"></i> Failed</span>
+                            <strong>{{ post_stats.failed }}</strong>
+                        </div>
+
+                    </div>
+
+                    <div class="total-posts">
+                        <span>Total tracked posts</span>
+                        <strong>{{ post_stats.total }}</strong>
+                    </div>
+                </div>
+
+            </section>
+
+            <section class="buffer-section">
+
+                <div class="buffer-information">
+                    <div class="buffer-logo">B</div>
+
+                    <div>
+                        <h3>Buffer integration</h3>
+
+                        {% if buffer_connection %}
+                            <p>
+                                Your Buffer account is connected and ready.
+                                {% if buffer_connection.email %}
+                                    Connected as {{ buffer_connection.email }}.
+                                {% endif %}
+                            </p>
+                        {% else %}
+                            <p>
+                                Connect Buffer to start scheduling your
+                                thrift products on social media.
+                            </p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% if buffer_connection %}
+                    <a
+                        href="{{ url_for('scheduler.channels') }}"
+                        class="secondary-button"
+                    >
+                        Manage channels
+                    </a>
+                {% else %}
+                    <a
+                        href="{{ url_for('auth.connect_buffer') }}"
+                        class="primary-button"
+                    >
+                        Connect Buffer
+                    </a>
+                {% endif %}
+
+            </section>
+
+            <footer class="dashboard-footer">
+                <span>Okrika-Rack</span>
+                <span>Built for smarter thrift selling.</span>
+            </footer>
+
+        </main>
+    </div>
 </body>
 </html>

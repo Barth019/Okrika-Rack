@@ -1,0 +1,216 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Account Settings | Okrika-Rack</title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='css/dashboard.css') }}"
+    >
+</head>
+
+<body>
+    <div class="dashboard-layout">
+
+        <aside class="sidebar">
+            <a href="{{ url_for('accounts.dashboard') }}" class="brand">
+                <span class="brand-icon">O</span>
+                Okrika-Rack
+            </a>
+
+            <p class="sidebar-label">WORKSPACE</p>
+
+            <nav class="sidebar-nav">
+                <a href="{{ url_for('accounts.dashboard') }}" class="nav-link">
+                    <span>▦</span> Overview
+                </a>
+
+                <a href="{{ url_for('items.inventory') }}" class="nav-link">
+                    <span>▤</span> Inventory
+                </a>
+
+                <a href="{{ url_for('items.add_item') }}" class="nav-link">
+                    <span>＋</span> Add product
+                </a>
+
+                <a href="{{ url_for('scheduler.channels') }}" class="nav-link">
+                    <span>◷</span> Scheduling
+                </a>
+
+                <a href="{{ url_for('scheduler.post_history') }}" class="nav-link">
+                    <span>▣</span> Post history
+                </a>
+
+                <a href="{{ url_for('accounts.settings') }}" class="nav-link active">
+                    <span>⚙</span> Settings
+                </a>
+            </nav>
+
+            <div class="sidebar-bottom">
+                <div class="sidebar-buffer">
+                    <span class="status-dot"></span>
+                    {% if buffer_connection %}
+                        Buffer connected
+                    {% else %}
+                        Buffer not connected
+                    {% endif %}
+                </div>
+
+                <form action="{{ url_for('accounts.logout') }}" method="POST">
+                    <input
+                        type="hidden"
+                        name="csrf_token"
+                        value="{{ csrf_token() }}"
+                    >
+                    <button type="submit" class="logout-button">
+                        ↪ Log out
+                    </button>
+                </form>
+            </div>
+        </aside>
+
+        <main class="main-content">
+
+            <header class="topbar">
+                <div>
+                    <p class="eyebrow">YOUR SELLING WORKSPACE</p>
+                    <h1>Account settings</h1>
+                </div>
+
+                <div class="user-profile">
+                    <div class="avatar">
+                        {{ current_user.email[0]|upper }}
+                    </div>
+                    <div class="user-details">
+                        <strong>{{ current_user.email }}</strong>
+                        <span>Seller account</span>
+                    </div>
+                </div>
+            </header>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="flash-message flash-{{ category }}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <section class="welcome-section">
+                <div>
+                    <h2>Manage your account</h2>
+                    <p>
+                        Set up how customers can contact you when they want
+                        to order your products.
+                    </p>
+                </div>
+            </section>
+
+            <section class="settings-section">
+
+                <article class="settings-card">
+                    <div class="settings-card-header">
+                        <div>
+                            <span class="settings-icon">☏</span>
+                            <h2>WhatsApp ordering</h2>
+                        </div>
+
+                        {% if current_user.whatsapp_number %}
+                            <span class="settings-status connected">
+                                Number added
+                            </span>
+                        {% else %}
+                            <span class="settings-status incomplete">
+                                Setup required
+                            </span>
+                        {% endif %}
+                    </div>
+
+                    <p class="settings-description">
+                        Let customers contact you directly on WhatsApp
+                        to order products from your inventory.
+                    </p>
+
+                    <form
+                        action="{{ url_for('accounts.settings') }}"
+                        method="POST"
+                        class="settings-form"
+                    >
+                        <input
+                            type="hidden"
+                            name="csrf_token"
+                            value="{{ csrf_token() }}"
+                        >
+
+                        <label for="whatsapp_number">
+                            WhatsApp phone number
+                        </label>
+
+                        <input
+                            type="tel"
+                            id="whatsapp_number"
+                            name="whatsapp_number"
+                            value="{{ current_user.whatsapp_number or '' }}"
+                            placeholder="08012345678 or +2348012345678"
+                            autocomplete="tel"
+                            maxlength="20"
+                        >
+
+                        <small>
+                            Enter your Nigerian number or an international
+                            number with its country code.
+                        </small>
+
+                        <div class="settings-info">
+                            <strong>How this works</strong>
+                            <p>
+                                Okrika-Rack will generate a unique WhatsApp
+                                ordering link for each product. Customers
+                                can use the link to message you with the
+                                product name already included.
+                            </p>
+                        </div>
+
+                        <div class="settings-actions">
+                            <button type="submit" class="primary-button">
+                                Save WhatsApp number
+                            </button>
+
+                            {% if current_user.whatsapp_number %}
+                                <a
+                                    href="{{ url_for('accounts.dashboard') }}"
+                                    class="secondary-button"
+                                >
+                                    Cancel
+                                </a>
+                            {% endif %}
+                        </div>
+                    </form>
+                </article>
+
+                <article class="settings-card account-details-card">
+                    <h2>Account information</h2>
+
+                    <div class="account-detail">
+                        <span>Email address</span>
+                        <strong>{{ current_user.email }}</strong>
+                    </div>
+
+                    <div class="account-detail">
+                        <span>Account type</span>
+                        <strong>Seller account</strong>
+                    </div>
+                </article>
+
+            </section>
+
+        </main>
+    </div>
+</body>
+</html>

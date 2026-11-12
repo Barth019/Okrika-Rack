@@ -29,6 +29,11 @@ class Seller(UserMixin, db.Model):
         nullable=False,
     )
 
+    whatsapp_number = db.Column(
+        db.String(20),
+        nullable=True,
+    )
+
     created_at = db.Column(
         db.DateTime(timezone=True),
         default=utc_now,
@@ -290,6 +295,11 @@ class ScheduledPost(db.Model):
         nullable=False,
     )
 
+    buffer_channel_service = db.Column(
+        db.String(50),
+        nullable=True,
+    )
+
     buffer_post_id = db.Column(
         db.String(120),
         nullable=True,
@@ -305,6 +315,11 @@ class ScheduledPost(db.Model):
         db.DateTime(timezone=True),
         nullable=False,
         index=True,
+    )
+
+    published_at = db.Column(
+        db.DateTime(timezone=True),
+        nullable=True,
     )
 
     status = db.Column(

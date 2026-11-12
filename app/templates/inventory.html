@@ -5,187 +5,415 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>My Inventory | Okrika-Rack</title>
+    <title>Inventory | Okrika-Rack</title>
 
     <link
         rel="stylesheet"
-        href="{{ url_for('static', filename='css/style.css') }}"
+        href="{{ url_for('static', filename='css/dashboard.css') }}"
     >
 </head>
 
 <body>
-    <main class="container inventory-container">
+    <div class="dashboard-layout inventory-page">
 
-        <div class="brand">Okrika-Rack</div>
-
-        <div class="inventory-navigation">
-
-            <a href="{{ url_for('accounts.dashboard') }}">
-                ← Back to Dashboard
+        <aside class="sidebar">
+            <a href="{{ url_for('accounts.dashboard') }}" class="brand">
+                <span class="brand-icon">O</span>
+                Okrika-Rack
             </a>
 
-            <a href="{{ url_for('home') }}">
-                 Home
-            </a>
+            <p class="sidebar-label">WORKSPACE</p>
 
-        </div>
+            <nav class="sidebar-nav">
+                <a href="{{ url_for('accounts.dashboard') }}" class="nav-link">
+                    <span>▦</span> Overview
+                </a>
 
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="flash-message flash-{{ category }}">
-                        {{ message }}
+                <a href="{{ url_for('items.inventory') }}" class="nav-link active">
+                    <span>▤</span> Inventory
+                </a>
+
+                <a href="{{ url_for('items.add_item') }}" class="nav-link">
+                    <span>＋</span> Add product
+                </a>
+
+                <a href="{{ url_for('scheduler.channels') }}" class="nav-link">
+                    <span>◷</span> Scheduling
+                </a>
+
+                <a href="{{ url_for('scheduler.post_history') }}" class="nav-link">
+                    <span>▣</span> Post history
+                </a>
+
+                <a href="{{ url_for('accounts.settings') }}" class="nav-link">
+                    <span>⚙</span> Settings
+                </a>
+</nav>
+
+            <div class="sidebar-bottom">
+                <form action="{{ url_for('accounts.logout') }}" method="POST">
+                    <input
+                        type="hidden"
+                        name="csrf_token"
+                        value="{{ csrf_token() }}"
+                    >
+
+                    <button type="submit" class="logout-button">
+                        ↪ Log out
+                    </button>
+                </form>
+            </div>
+        </aside>
+
+        <main class="main-content">
+
+            <header class="topbar">
+                <div>
+                    <p class="eyebrow">PRODUCT MANAGEMENT</p>
+                    <h1>My inventory</h1>
+                </div>
+
+                <a
+                    href="{{ url_for('items.add_item') }}"
+                    class="inventory-add-button"
+                >
+                    + Add product
+                </a>
+            </header>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="inventory-flashes">
+                        {% for category, message in messages %}
+                            <div class="flash-message flash-{{ category }}">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
                     </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
+                {% endif %}
+            {% endwith %}
 
-        <h1>My inventory.</h1>
+            <section class="inventory-intro">
+                <div>
+                    <h2>Your products, all in one place.</h2>
+                    <p>
+                        Manage your thrift items, monitor availability
+                        and keep your Buffer publishing queue up to date.
+                    </p>
+                </div>
+            </section>
 
-        <p class="description">
-            Manage your thrift items and keep track of what's available.
-        </p>
+            <section class="inventory-stats">
 
-        <a href="{{ url_for('items.add_item') }}" class="connect-button">
-            + Add new item
-        </a>
+                <article class="inventory-stat-card">
+                    <div class="inventory-stat-icon">▤</div>
+                    <div>
+                        <span>Total products</span>
+                        <strong>{{ items|length }}</strong>
+                    </div>
+                </article>
 
-        <div class="inventory-list">
+                <article class="inventory-stat-card">
+                    <div class="inventory-stat-icon available-icon">✓</div>
+                    <div>
+                        <span>Available</span>
+                        <strong>
+                            {{ items|selectattr('availability', 'equalto', 'available')|list|length }}
+                        </strong>
+                    </div>
+                </article>
+
+                <article class="inventory-stat-card">
+                    <div class="inventory-stat-icon sold-icon">↗</div>
+                    <div>
+                        <span>Sold</span>
+                        <strong>
+                            {{ items|selectattr('availability', 'equalto', 'sold')|list|length }}
+                        </strong>
+                    </div>
+                </article>
+
+            </section>
+
+            <section class="inventory-toolbar">
+
+                <div class="inventory-toolbar-heading">
+                    <div>
+                        <h3>Your products</h3>
+                        <p>Browse and manage your inventory.</p>
+                    </div>
+
+                    <span class="inventory-total-label">
+                        {{ items|length }} products
+                    </span>
+                </div>
+
+                <div class="inventory-controls">
+
+                    <div class="inventory-search">
+                        <span>⌕</span>
+                        <input
+                            type="search"
+                            id="inventorySearch"
+                            placeholder="Search products..."
+                            aria-label="Search products"
+                        >
+                    </div>
+
+                    <select
+                        id="inventoryFilter"
+                        class="inventory-filter"
+                        aria-label="Filter products by availability"
+                    >
+                        <option value="all">All products</option>
+                        <option value="available">Available</option>
+                        <option value="sold">Sold</option>
+                    </select>
+
+                </div>
+
+            </section>
 
             {% if items %}
 
-                {% for item in items %}
+                <section class="inventory-grid" id="inventoryGrid">
 
-                    <article class="inventory-card">
+                    {% for item in items %}
 
-                        {% if item.image_url %}
-                            <div class="inventory-image-wrapper">
-                                <img
-                                    src="{{ item.image_url }}"
-                                    alt="{{ item.name }}"
-                                    class="inventory-image"
-                                    loading="lazy"
-                                >
-                            </div>
-                        {% endif %}
+                        <article
+                            class="inventory-product-card"
+                            data-name="{{ item.name|lower }}"
+                            data-status="{{ item.availability }}"
+                        >
 
-                        <div class="inventory-card-header">
-                            <h2>{{ item.name }}</h2>
+                            <div class="inventory-product-image">
 
-                            <span class="availability-badge {{ item.availability }}">
-                                {{ item.availability|title }}
-                            </span>
-                        </div>
-
-                        <p class="item-price">
-                            ₦{{ "{:,.2f}".format(item.price) }}
-                        </p>
-
-                        {% if item.size %}
-                            <p>Size: {{ item.size }}</p>
-                        {% endif %}
-
-                        <p>Condition: {{ item.condition|title }}</p>
-
-                        {% if item.description %}
-                            <p>{{ item.description }}</p>
-                        {% endif %}
-
-                        <div class="item-actions">
-                            <a
-                                href="{{ url_for('items.edit_item', item_id=item.id) }}"
-                                class="edit-item-button"
-                            >
-                                Edit item
-                            </a>
-                            {% if item.availability == "available" %}
-                                <a
-                                href="{{ url_for('scheduler.new_schedule', item_id=item.id) }}"
-                                class="connect-button"
-                                >
-                                    Schedule post
-                                </a>
-                            {% endif %}
-
-                            <form
-                                action="{{ url_for('items.update_availability', item_id=item.id) }}"
-                                method="POST"
-                            >
-                                <input
-                                    type="hidden"
-                                    name="csrf_token"
-                                    value="{{ csrf_token() }}"
-                                >
-
-                                {% if item.availability == "available" %}
-                                    <input type="hidden" name="availability" value="sold">
-
-                                    <button type="submit" class="availability-action-button mark-sold-button">
-                                        Mark as Sold
-                                    </button>
+                                {% if item.image_url %}
+                                    <img
+                                        src="{{ item.image_url }}"
+                                        alt="{{ item.name }}"
+                                        loading="lazy"
+                                    >
                                 {% else %}
-                                    <input type="hidden" name="availability" value="available">
-
-                                    <button type="submit" class="availability-action-button mark-available-button">
-                                        Mark Available
-                                    </button>
+                                    <div class="inventory-no-image">
+                                        <span>▧</span>
+                                        <small>No product image</small>
+                                    </div>
                                 {% endif %}
-                            </form>
 
-                            <form
-                                action="{{ url_for('items.delete_item', item_id=item.id) }}"
-                                method="POST"
-                                onsubmit="return confirm('Are you sure you want to delete this item? This action cannot be undone.');"
-                            >
-                                <input
-                                    type="hidden"
-                                    name="csrf_token"
-                                    value="{{ csrf_token() }}"
-                                >
+                                <span class="inventory-product-status status-{{ item.availability }}">
+                                    {{ item.availability|title }}
+                                </span>
 
-                                <button type="submit" class="delete-item-button">
-                                    Delete item
-                                </button>
-                            </form>
-                        </div>
+                            </div>
 
-                    </article>
+                            <div class="inventory-product-content">
 
-                {% endfor %}
+                                <div class="inventory-product-heading">
+                                    <h4>{{ item.name }}</h4>
+
+                                    <strong class="inventory-product-price">
+                                        ₦{{ "{:,.2f}".format(item.price) }}
+                                    </strong>
+                                </div>
+
+                                <div class="inventory-product-meta">
+                                    {% if item.size %}
+                                        <span>Size: {{ item.size }}</span>
+                                    {% endif %}
+
+                                    {% if item.condition %}
+                                        <span>{{ item.condition|title }}</span>
+                                    {% endif %}
+                                </div>
+
+                                {% if item.description %}
+                                    <p class="inventory-product-description">
+                                        {{ item.description }}
+                                    </p>
+                                {% else %}
+                                    <p class="inventory-product-description muted">
+                                        No product description added.
+                                    </p>
+                                {% endif %}
+
+                                <div class="inventory-card-actions">
+
+                                    <a
+                                        href="{{ url_for('items.edit_item', item_id=item.id) }}"
+                                        class="inventory-edit-button"
+                                    >
+                                        Edit product
+                                    </a>
+
+                                    {% if item.availability == "available" %}
+
+                                        <a
+                                            href="{{ url_for('scheduler.new_schedule', item_id=item.id) }}"
+                                            class="inventory-schedule-button"
+                                        >
+                                            Schedule post
+                                        </a>
+
+                                    {% endif %}
+
+                                </div>
+
+                                <div class="inventory-secondary-actions">
+
+                                    <form
+                                        action="{{ url_for('items.update_availability', item_id=item.id) }}"
+                                        method="POST"
+                                    >
+                                        <input
+                                            type="hidden"
+                                            name="csrf_token"
+                                            value="{{ csrf_token() }}"
+                                        >
+
+                                        {% if item.availability == "available" %}
+                                            <input
+                                                type="hidden"
+                                                name="availability"
+                                                value="sold"
+                                            >
+
+                                            <button
+                                                type="submit"
+                                                class="inventory-status-button mark-sold"
+                                            >
+                                                Mark as sold
+                                            </button>
+                                        {% else %}
+                                            <input
+                                                type="hidden"
+                                                name="availability"
+                                                value="available"
+                                            >
+
+                                            <button
+                                                type="submit"
+                                                class="inventory-status-button mark-available"
+                                            >
+                                                Mark available
+                                            </button>
+                                        {% endif %}
+                                    </form>
+
+                                    <form
+                                        action="{{ url_for('items.delete_item', item_id=item.id) }}"
+                                        method="POST"
+                                        onsubmit="return confirm('Are you sure you want to delete this item? This action cannot be undone.');"
+                                    >
+                                        <input
+                                            type="hidden"
+                                            name="csrf_token"
+                                            value="{{ csrf_token() }}"
+                                        >
+
+                                        <button
+                                            type="submit"
+                                            class="inventory-delete-button"
+                                        >
+                                            Delete
+                                        </button>
+                                    </form>
+
+                                </div>
+
+                            </div>
+
+                        </article>
+
+                    {% endfor %}
+
+                </section>
+
+                <div class="inventory-no-results" id="inventoryNoResults" hidden>
+                    <div>⌕</div>
+                    <h3>No matching products</h3>
+                    <p>Try another search or change your availability filter.</p>
+                </div>
 
             {% else %}
 
-                <div class="empty-inventory">
-                    <h2>Your inventory is empty.</h2>
-
+                <section class="inventory-empty-state">
+                    <div class="inventory-empty-icon">▤</div>
+                    <h3>Your inventory is empty</h3>
                     <p>
-                        Start by adding your first thrift item.
+                        Your next sale starts with your first product.
+                        Add an item to begin managing your thrift inventory.
                     </p>
-                </div>
+
+                    <a
+                        href="{{ url_for('items.add_item') }}"
+                        class="inventory-add-button"
+                    >
+                        + Add your first product
+                    </a>
+                </section>
 
             {% endif %}
 
-        </div>
+            <footer class="dashboard-footer">
+                <span>Okrika-Rack</span>
+                <span>Built for smarter thrift selling.</span>
+            </footer>
 
-        <p class="note">
-            Logged in as {{ current_user.email }}
-        </p>
+        </main>
+    </div>
 
-        <form
-            action="{{ url_for('accounts.logout') }}"
-            method="POST"
-        >
-            <input
-                type="hidden"
-                name="csrf_token"
-                value="{{ csrf_token() }}"
-            >
+    <script>
+        const searchInput = document.getElementById("inventorySearch");
+        const filterInput = document.getElementById("inventoryFilter");
+        const productCards = document.querySelectorAll(
+            ".inventory-product-card"
+        );
+        const noResults = document.getElementById("inventoryNoResults");
 
-            <button type="submit" class="logout-button">
-                Log out
-            </button>
-        </form>
+        function filterInventory() {
+            if (!searchInput || !filterInput) return;
 
-    </main>
+            const searchTerm = searchInput.value
+                .trim()
+                .toLowerCase();
+
+            const selectedStatus = filterInput.value;
+
+            let visibleCount = 0;
+
+            productCards.forEach((card) => {
+                const productName = card.dataset.name || "";
+                const productStatus = card.dataset.status || "";
+
+                const matchesSearch = productName.includes(searchTerm);
+
+                const matchesStatus =
+                    selectedStatus === "all" ||
+                    productStatus === selectedStatus;
+
+                const visible = matchesSearch && matchesStatus;
+
+                card.hidden = !visible;
+
+                if (visible) {
+                    visibleCount++;
+                }
+            });
+
+            if (noResults) {
+                noResults.hidden = visibleCount > 0;
+            }
+        }
+
+        if (searchInput) {
+            searchInput.addEventListener("input", filterInventory);
+        }
+
+        if (filterInput) {
+            filterInput.addEventListener("change", filterInventory);
+        }
+    </script>
+
 </body>
 </html>

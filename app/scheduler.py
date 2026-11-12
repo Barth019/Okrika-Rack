@@ -1,6 +1,7 @@
 
 import logging
 from datetime import datetime, timezone
+from urllib.parse import urlencode
 from zoneinfo import ZoneInfo
 
 from flask import (
@@ -30,6 +31,7 @@ from app.buffer_client import (
 )
 
 from app.token_manager import get_valid_buffer_access_token
+from app.post_sync import sync_seller_posts
 
 
 scheduler_bp = Blueprint(
@@ -42,6 +44,23 @@ logger = logging.getLogger(__name__)
 
 NIGERIA_TIMEZONE = ZoneInfo("Africa/Lagos")
 MAX_CAPTION_LENGTH = 2000
+
+
+def build_whatsapp_link(phone_number, item_name):
+    """Build a product-specific WhatsApp ordering link."""
+
+    if not phone_number:
+        return None
+
+    message = (
+        f"Hello! I'm interested in buying the {item_name}. "
+        "Is it still available?"
+    )
+
+    return (
+        f"https://wa.me/{phone_number}?"
+        f"{urlencode({'text': message})}"
+    )
 
 
 @scheduler_bp.route("/channels")
@@ -111,6 +130,137 @@ def channels():
         organizations=organizations,
         selected_organization=selected_organization,
         channels=channels,
+    )
+
+
+@scheduler_bp.route("/history")
+@login_required
+def post_history():
+    """Display the logged-in seller's scheduled post history."""
+
+    allowed_statuses = {
+        "pending",
+        "scheduled",
+        "published",
+        "cancelled",
+        "failed",
+    }
+
+    selected_status = request.args.get(
+        "status",
+        "all",
+    ).strip().lower()
+
+    if selected_status != "all" and selected_status not in allowed_statuses:
+        selected_status = "all"
+
+    # Retrieve only posts belonging to the logged-in seller.
+    posts_query = ScheduledPost.query.filter_by(
+        seller_id=current_user.id
+    )
+
+    if selected_status != "all":
+        posts_query = posts_query.filter_by(
+            status=selected_status
+        )
+
+    posts = (
+        posts_query
+        .order_by(ScheduledPost.created_at.desc())
+        .all()
+    )
+
+    # Calculate post counts for the history filters.
+    post_counts = {
+        "all": ScheduledPost.query.filter_by(
+            seller_id=current_user.id
+        ).count(),
+    }
+
+    for status in allowed_statuses:
+        post_counts[status] = ScheduledPost.query.filter_by(
+            seller_id=current_user.id,
+            status=status,
+        ).count()
+
+    # Generate product-specific WhatsApp ordering links.
+    whatsapp_links = {}
+
+    if current_user.whatsapp_number:
+        whatsapp_links = {
+            post.id: build_whatsapp_link(
+                current_user.whatsapp_number,
+                post.item.name,
+            )
+            for post in posts
+            if post.item and post.item.availability == "available"
+        }
+
+    return render_template(
+        "post_history.html",
+        posts=posts,
+        post_counts=post_counts,
+        selected_status=selected_status,
+        whatsapp_links=whatsapp_links,
+    )
+
+
+@scheduler_bp.route("/sync", methods=["POST"])
+@login_required
+def sync_posts():
+    """Manually synchronize the seller's scheduled posts with Buffer."""
+
+    selected_status = request.form.get(
+        "status",
+        "all",
+    ).strip().lower()
+
+    allowed_statuses = {
+        "all",
+        "pending",
+        "scheduled",
+        "published",
+        "cancelled",
+        "failed",
+    }
+
+    if selected_status not in allowed_statuses:
+        selected_status = "all"
+
+    try:
+        results = sync_seller_posts(current_user.id)
+
+        flash(
+            (
+                f"Buffer sync completed. "
+                f"Checked: {results['checked']}, "
+                f"Published: {results['published']}, "
+                f"Failed: {results['failed']}, "
+                f"Unchanged: {results['unchanged']}, "
+                f"Errors: {results['errors']}."
+            ),
+            "success" if results["errors"] == 0 else "warning",
+        )
+
+    except Exception:
+        db.session.rollback()
+
+        logger.exception(
+            "Unexpected Buffer synchronization failure "
+            "for seller %s.",
+            current_user.id,
+        )
+
+        flash(
+            "We couldn't synchronize your posts. Please try again.",
+            "error",
+        )
+
+    return redirect(
+        url_for(
+            "scheduler.post_history",
+            status=selected_status,
+        )
     )
 
 
@@ -226,6 +376,27 @@ def new_schedule():
                 None,
             )
 
+            channel_service = (
+                channel.get("service", "").lower()
+                if channel
+                else ""
+            )
+
+            whatsapp_link = build_whatsapp_link(
+                current_user.whatsapp_number,
+                item.name,
+            )
+
+            # Instagram uses a clean caption.
+            # Other platforms receive the ordering link in the caption.
+            final_caption = caption
+
+            if whatsapp_link and channel_service != "instagram":
+                final_caption = (
+                    f"{caption}\n\n"
+                    f"To order: {whatsapp_link}"
+                )
+
             if not channel:
                 flash(
                     "Please select a valid Buffer channel.",
@@ -242,7 +413,7 @@ def new_schedule():
                 )
 
             elif (
-                channel.get("service", "").lower() == "instagram"
+                channel_service == "instagram"
                 and not item.image_url
             ):
                 flash(
@@ -257,9 +428,11 @@ def new_schedule():
                     "error",
                 )
 
-            elif len(caption) > MAX_CAPTION_LENGTH:
+            elif len(final_caption) > MAX_CAPTION_LENGTH:
                 flash(
-                    "Your caption is too long.",
+                    "Your caption is too long. "
+                    "Please shorten it to fit within Buffer's "
+                    "2,000-character limit, including the WhatsApp link.",
                     "error",
                 )
 
@@ -296,7 +469,7 @@ def new_schedule():
                     created_post = create_buffer_post(
                         access_token,
                         channel_id,
-                        caption,
+                        final_caption,
                         due_at,
                         image_url=item.image_url,
                         channel_service=channel.get("service"),
@@ -309,8 +482,9 @@ def new_schedule():
                             item_id=item.id,
                             buffer_connection_id=connection.id,
                             buffer_channel_id=channel_id,
+                            buffer_channel_service=channel.get("service"),
                             buffer_post_id=created_post["id"],
-                            caption=caption,
+                            caption=final_caption,
                             scheduled_at=scheduled_utc,
                             status="scheduled",
                         )
@@ -343,10 +517,21 @@ def new_schedule():
 
                         raise
 
-                    flash(
-                        f"Your post for {item.name} was scheduled successfully!",
-                        "success",
-                    )
+                    if channel_service == "instagram" and whatsapp_link:
+                        flash(
+                            (
+                                f"Your post for {item.name} was scheduled "
+                                "successfully! Copy the WhatsApp ordering "
+                                "link from Post History and add it as your "
+                                "Instagram first comment."
+                            ),
+                            "success",
+                        )
+                    else:
+                        flash(
+                            f"Your post for {item.name} was scheduled successfully!",
+                            "success",
+                        )
 
                     return redirect(
                         url_for("items.inventory")

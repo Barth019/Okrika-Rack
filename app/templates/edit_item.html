@@ -5,258 +5,710 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Edit Item | Okrika-Rack</title>
+    <title>Edit Product | Okrika-Rack</title>
 
     <link
         rel="stylesheet"
-        href="{{ url_for('static', filename='css/style.css') }}"
+        href="{{ url_for('static', filename='css/dashboard.css') }}"
     >
 
     <style>
-        .image-upload-area {
-            margin: 12px 0 22px;
+        .edit-item-page .main-content {
+            min-width: 0;
         }
 
-        .image-upload-box {
-            display: block;
-            padding: 24px;
-            border: 2px dashed #c8c8c0;
-            border-radius: 12px;
-            text-align: center;
-            cursor: pointer;
-            background: #fafaf7;
+        .edit-item-heading {
+            margin: 24px 0;
         }
 
-        .image-upload-box:hover {
-            border-color: #65734f;
-            background: #f3f5ee;
+        .edit-item-heading h2 {
+            margin: 0 0 8px;
+            color: #203b30;
+            font-size: 24px;
         }
 
-        .upload-icon {
-            font-size: 32px;
-            margin-bottom: 8px;
-        }
-
-        .upload-hint {
-            display: block;
-            margin-top: 7px;
+        .edit-item-heading p {
+            margin: 0;
+            color: #78877e;
             font-size: 13px;
-            color: #777;
+            line-height: 1.7;
+        }
+
+        .edit-item-card {
+            max-width: 900px;
+            padding: 28px;
+            border: 1px solid #e8eee9;
+            border-radius: 15px;
+            background: #fff;
+            box-shadow: 0 3px 14px rgba(29, 65, 46, 0.04);
+        }
+
+        .edit-item-form {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .form-section-heading {
+            margin: 0 0 20px;
+            padding-bottom: 13px;
+            border-bottom: 1px solid #edf0ed;
+            color: #294638;
+            font-size: 15px;
+            font-weight: 750;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 19px;
+        }
+
+        .form-field {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            min-width: 0;
+        }
+
+        .form-field.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .form-field label {
+            color: #354b3e;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .form-field label span {
+            color: #b45c51;
+        }
+
+        .form-field input:not([type="checkbox"]),
+        .form-field textarea,
+        .form-field select {
+            width: 100%;
+            min-width: 0;
+            padding: 12px 13px;
+            border: 1px solid #dfe7e0;
+            border-radius: 9px;
+            outline: none;
+            background: #fff;
+            color: #253b30;
+            font-family: inherit;
+            font-size: 13px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .form-field input:focus,
+        .form-field textarea:focus,
+        .form-field select:focus {
+            border-color: #4b8061;
+            box-shadow: 0 0 0 3px rgba(75, 128, 97, 0.10);
+        }
+
+        .form-field textarea {
+            min-height: 105px;
+            resize: vertical;
+            line-height: 1.6;
+        }
+
+        .field-hint {
+            color: #8a968e;
+            font-size: 10px;
+            line-height: 1.5;
+        }
+
+        .image-upload-area {
+            width: 100%;
+        }
+
+        .current-image-container {
+            margin-bottom: 17px;
+        }
+
+        .current-image-label {
+            display: block;
+            margin-bottom: 9px;
+            color: #354b3e;
+            font-size: 11px;
+            font-weight: 700;
         }
 
         .current-image {
+            display: block;
             width: 100%;
             max-height: 280px;
+            border: 1px solid #e5ebe5;
+            border-radius: 11px;
+            background: #f3f5f2;
             object-fit: contain;
+            transition: opacity 0.2s;
+        }
+
+        .no-current-image {
+            margin: 0 0 16px;
+            padding: 15px;
+            border: 1px dashed #dce6de;
+            border-radius: 9px;
+            background: #f8faf7;
+            color: #829087;
+            font-size: 12px;
+        }
+
+        .image-upload-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 9px;
+            min-height: 160px;
+            padding: 25px;
+            border: 2px dashed #d2dfd5;
             border-radius: 12px;
-            margin: 12px 0;
-            background: #eee;
+            background: #f8faf7;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color 0.2s, background 0.2s;
+        }
+
+        .image-upload-box:hover {
+            border-color: #548366;
+            background: #f0f6f0;
+        }
+
+        .upload-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 47px;
+            height: 47px;
+            border-radius: 13px;
+            background: #eaf2eb;
+            color: #326448;
+            font-size: 23px;
+        }
+
+        .image-upload-box strong {
+            color: #315540;
+            font-size: 13px;
+        }
+
+        .upload-hint {
+            color: #87938a;
+            font-size: 10px;
         }
 
         .image-preview {
             display: none;
             width: 100%;
             max-height: 280px;
+            margin-top: 14px;
+            border: 1px solid #e5ebe5;
+            border-radius: 11px;
+            background: #f3f5f2;
             object-fit: contain;
-            margin-top: 12px;
-            border-radius: 12px;
-            background: #eee;
         }
 
         .image-status {
-            font-size: 13px;
-            margin-top: 8px;
-            color: #555;
+            min-height: 16px;
+            margin: 8px 0 0;
+            color: #52715c;
+            font-size: 11px;
         }
 
         .remove-image {
-            margin-top: 10px;
-            border: none;
+            display: none;
+            margin-top: 8px;
+            padding: 7px 0;
+            border: 0;
             background: transparent;
-            color: #a32626;
+            color: #b34e48;
+            font-family: inherit;
+            font-size: 11px;
+            font-weight: 700;
             cursor: pointer;
-            font-size: 14px;
         }
 
         .remove-image-label {
             display: flex;
             align-items: center;
             gap: 9px;
-            margin: 12px 0;
-            font-size: 14px;
+            margin-top: 15px;
+            padding: 12px;
+            border: 1px solid #f0e3df;
+            border-radius: 9px;
+            background: #fff9f7;
+            color: #98544d;
+            font-size: 11px;
+            font-weight: 650;
+            cursor: pointer;
+        }
+
+        .remove-image-label input {
+            width: 16px;
+            height: 16px;
+            accent-color: #b45c51;
+            cursor: pointer;
+        }
+
+        .form-actions {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+            padding-top: 20px;
+            border-top: 1px solid #edf0ed;
+        }
+
+        .form-cancel-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px 17px;
+            border: 1px solid #dfe7e0;
+            border-radius: 9px;
+            background: #fff;
+            color: #52645a;
+            font-size: 12px;
+            font-weight: 650;
+            text-decoration: none;
+        }
+
+        .form-save-button {
+            min-width: 155px;
+            padding: 13px 20px;
+            border: 0;
+            border-radius: 9px;
+            background: #245c43;
+            color: #fff;
+            font-family: inherit;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .form-save-button:hover {
+            background: #194832;
+        }
+
+        .form-save-button:disabled {
+            opacity: 0.65;
+            cursor: wait;
+        }
+
+        .edit-item-flashes {
+            margin-bottom: 20px;
+        }
+
+        .edit-item-flashes .flash-message {
+            padding: 12px 15px;
+            margin-bottom: 9px;
+            border-radius: 9px;
+            font-size: 12px;
+        }
+
+        .edit-item-flashes .flash-success {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .edit-item-flashes .flash-error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .edit-item-flashes .flash-warning {
+            background: #fff7df;
+            color: #94651e;
+        }
+
+        @media (max-width: 700px) {
+            .edit-item-page .main-content {
+                padding: 22px 15px;
+            }
+
+            .edit-item-page .topbar {
+                margin-bottom: 20px;
+            }
+
+            .edit-item-page .topbar h1 {
+                font-size: 23px;
+            }
+
+            .edit-item-heading {
+                margin: 18px 0;
+            }
+
+            .edit-item-heading h2 {
+                font-size: 20px;
+            }
+
+            .edit-item-card {
+                padding: 18px 14px;
+                border-radius: 12px;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+
+            .form-field.full-width {
+                grid-column: auto;
+            }
+
+            .image-upload-box {
+                min-height: 145px;
+                padding: 20px 12px;
+            }
+
+            .form-actions {
+                flex-direction: column-reverse;
+                align-items: stretch;
+            }
+
+            .form-save-button,
+            .form-cancel-button {
+                width: 100%;
+                text-align: center;
+            }
         }
     </style>
 </head>
 
 <body>
-    <main class="container inventory-container">
+    <div class="dashboard-layout edit-item-page">
 
-        <div class="brand">Okrika-Rack</div>
+        <aside class="sidebar">
+            <a href="{{ url_for('accounts.dashboard') }}" class="brand">
+                <span class="brand-icon">O</span>
+                Okrika-Rack
+            </a>
 
-        <a href="{{ url_for('items.inventory') }}" class="back-link">
-            ← Back to inventory
-        </a>
+            <p class="sidebar-label">WORKSPACE</p>
 
-        <h1>Edit item.</h1>
+            <nav class="sidebar-nav">
+                <a href="{{ url_for('accounts.dashboard') }}" class="nav-link">
+                    <span>▦</span> Overview
+                </a>
 
-        <p class="description">
-            Update your product details and photos.
-        </p>
+                <a href="{{ url_for('items.inventory') }}" class="nav-link active">
+                    <span>▤</span> Inventory
+                </a>
 
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="flash-message flash-{{ category }}">
-                        {{ message }}
-                    </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
+                <a href="{{ url_for('items.add_item') }}" class="nav-link">
+                    <span>＋</span> Add product
+                </a>
 
-        <form
-            method="POST"
-            enctype="multipart/form-data"
-            class="item-form"
-            id="edit-item-form"
-        >
+                <a href="{{ url_for('scheduler.channels') }}" class="nav-link">
+                    <span>◷</span> Scheduling
+                </a>
 
-            <input
-                type="hidden"
-                name="csrf_token"
-                value="{{ csrf_token() }}"
-            >
+                <a href="{{ url_for('scheduler.post_history') }}" class="nav-link">
+                    <span>▣</span> Post history
+                </a>
 
-            <label for="name">Item name *</label>
-            <input
-                type="text"
-                id="name"
-                name="name"
-                maxlength="150"
-                value="{{ item.name }}"
-                required
-            >
+                <a href="{{ url_for('accounts.settings') }}" class="nav-link">
+                    <span>⚙</span> Settings
+                </a>
+</nav>
 
-            <label>Product photo</label>
-
-            <div class="image-upload-area">
-
-                {% if item.image_url %}
-                    <p>Current photo:</p>
-
-                    <img
-                        src="{{ item.image_url }}"
-                        alt="{{ item.name }}"
-                        class="current-image"
-                        id="current-image"
+            <div class="sidebar-bottom">
+                <form action="{{ url_for('accounts.logout') }}" method="POST">
+                    <input
+                        type="hidden"
+                        name="csrf_token"
+                        value="{{ csrf_token() }}"
                     >
-                {% else %}
-                    <p id="no-current-image">
-                        This item doesn't have a photo yet.
-                    </p>
-                {% endif %}
-
-                <label for="image" class="image-upload-box">
-                    <div class="upload-icon">📷</div>
-                    <strong>Choose a replacement photo</strong>
-                    <span class="upload-hint">
-                        JPEG, PNG or WebP · Maximum 5 MB
-                    </span>
-                </label>
-
-                <input
-                    type="file"
-                    id="image"
-                    name="image"
-                    accept="image/jpeg,image/png,image/webp"
-                    hidden
-                >
-
-                <img
-                    id="image-preview"
-                    class="image-preview"
-                    alt="Replacement photo preview"
-                >
-
-                <p id="image-status" class="image-status"></p>
-
-                <button
-                    type="button"
-                    id="cancel-image"
-                    class="remove-image"
-                    hidden
-                >
-                    Cancel replacement
-                </button>
-
-                {% if item.image_url %}
-                    <label class="remove-image-label">
-                        <input
-                            type="checkbox"
-                            id="remove-image"
-                            name="remove_image"
-                            value="true"
-                        >
-                        Remove current photo
-                    </label>
-                {% endif %}
-
+                    <button type="submit" class="logout-button">
+                        <span>↪</span> Sign out
+                    </button>
+                </form>
             </div>
+        </aside>
 
-            <label for="description">Description</label>
-            <textarea
-                id="description"
-                name="description"
-                rows="4"
-            >{{ item.description or '' }}</textarea>
+        <main class="main-content">
 
-            <label for="price">Selling price (₦) *</label>
-            <input
-                type="number"
-                id="price"
-                name="price"
-                min="0"
-                max="99999999.99"
-                step="0.01"
-                value="{{ item.price }}"
-                required
-            >
+            <header class="topbar">
+                <div>
+                    <p class="eyebrow">PRODUCT MANAGEMENT</p>
+                    <h1>Edit product</h1>
+                </div>
+            </header>
 
-            <label for="size">Size</label>
-            <input
-                type="text"
-                id="size"
-                name="size"
-                maxlength="50"
-                value="{{ item.size or '' }}"
-            >
+            <section class="edit-item-heading">
+                <h2>Keep your product details up to date.</h2>
+                <p>
+                    Update the information, change the photo or remove
+                    details that are no longer relevant.
+                </p>
+            </section>
 
-            <label for="condition">Condition *</label>
-            <select id="condition" name="condition" required>
-                <option value="">Select condition</option>
-                <option value="new" {% if item.condition == 'new' %}selected{% endif %}>New</option>
-                <option value="excellent" {% if item.condition == 'excellent' %}selected{% endif %}>Excellent</option>
-                <option value="good" {% if item.condition == 'good' %}selected{% endif %}>Good</option>
-                <option value="fair" {% if item.condition == 'fair' %}selected{% endif %}>Fair</option>
-            </select>
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="edit-item-flashes">
+                        {% for category, message in messages %}
+                            <div class="flash-message flash-{{ category }}">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
 
-            <label for="notes">Private notes</label>
-            <textarea
-                id="notes"
-                name="notes"
-                rows="3"
-            >{{ item.notes or '' }}</textarea>
+            <section class="edit-item-card">
 
-            <button
-                type="submit"
-                class="connect-button"
-                id="save-item"
-            >
-                Save changes
-            </button>
+                <form
+                    method="POST"
+                    enctype="multipart/form-data"
+                    class="edit-item-form"
+                    id="edit-item-form"
+                >
 
-        </form>
+                    <input
+                        type="hidden"
+                        name="csrf_token"
+                        value="{{ csrf_token() }}"
+                    >
 
-    </main>
+                    <section>
+                        <h3 class="form-section-heading">
+                            Product information
+                        </h3>
+
+                        <div class="form-grid">
+
+                            <div class="form-field full-width">
+                                <label for="name">
+                                    Product name <span>*</span>
+                                </label>
+
+                                <input
+                                    type="text"
+                                    id="name"
+                                    name="name"
+                                    maxlength="150"
+                                    value="{{ item.name }}"
+                                    required
+                                >
+                            </div>
+
+                            <div class="form-field full-width">
+                                <label for="description">
+                                    Product description
+                                </label>
+
+                                <textarea
+                                    id="description"
+                                    name="description"
+                                    rows="4"
+                                    placeholder="Describe the product..."
+                                >{{ item.description or '' }}</textarea>
+                            </div>
+
+                            <div class="form-field">
+                                <label for="price">
+                                    Selling price (₦) <span>*</span>
+                                </label>
+
+                                <input
+                                    type="number"
+                                    id="price"
+                                    name="price"
+                                    min="0"
+                                    max="99999999.99"
+                                    step="0.01"
+                                    value="{{ item.price }}"
+                                    required
+                                >
+                            </div>
+
+                            <div class="form-field">
+                                <label for="size">Size</label>
+
+                                <input
+                                    type="text"
+                                    id="size"
+                                    name="size"
+                                    maxlength="50"
+                                    value="{{ item.size or '' }}"
+                                    placeholder="e.g. Medium, XL, Size 42"
+                                >
+                            </div>
+
+                            <div class="form-field">
+                                <label for="condition">
+                                    Product condition <span>*</span>
+                                </label>
+
+                                <select id="condition" name="condition" required>
+                                    <option value="">Select condition</option>
+
+                                    <option value="new"
+                                        {% if item.condition == 'new' %}selected{% endif %}
+                                    >New</option>
+
+                                    <option value="excellent"
+                                        {% if item.condition == 'excellent' %}selected{% endif %}
+                                    >Excellent</option>
+
+                                    <option value="good"
+                                        {% if item.condition == 'good' %}selected{% endif %}
+                                    >Good</option>
+
+                                    <option value="fair"
+                                        {% if item.condition == 'fair' %}selected{% endif %}
+                                    >Fair</option>
+                                </select>
+                            </div>
+
+                        </div>
+                    </section>
+
+                    <section>
+                        <h3 class="form-section-heading">
+                            Product photo
+                        </h3>
+
+                        <div class="form-field">
+                            <label>Manage product photo</label>
+
+                            <div class="image-upload-area">
+
+                                {% if item.image_url %}
+                                    <div class="current-image-container"
+                                         id="current-image-container">
+
+                                        <span class="current-image-label">
+                                            Current product photo
+                                        </span>
+
+                                        <img
+                                            src="{{ item.image_url }}"
+                                            alt="{{ item.name }}"
+                                            class="current-image"
+                                            id="current-image"
+                                        >
+                                    </div>
+                                {% else %}
+                                    <p
+                                        id="no-current-image"
+                                        class="no-current-image"
+                                    >
+                                        This product doesn't have a photo yet.
+                                    </p>
+                                {% endif %}
+
+                                <label for="image" class="image-upload-box">
+                                    <span class="upload-icon">↑</span>
+
+                                    <strong>Choose a replacement photo</strong>
+
+                                    <span class="upload-hint">
+                                        Click to browse your files
+                                    </span>
+
+                                    <span class="upload-hint">
+                                        JPEG, PNG or WebP · Maximum 5 MB
+                                    </span>
+                                </label>
+
+                                <input
+                                    type="file"
+                                    id="image"
+                                    name="image"
+                                    accept="image/jpeg,image/png,image/webp"
+                                    hidden
+                                >
+
+                                <img
+                                    id="image-preview"
+                                    class="image-preview"
+                                    alt="Replacement photo preview"
+                                >
+
+                                <p
+                                    id="image-status"
+                                    class="image-status"
+                                    aria-live="polite"
+                                ></p>
+
+                                <button
+                                    type="button"
+                                    id="cancel-image"
+                                    class="remove-image"
+                                    hidden
+                                >
+                                    Cancel replacement
+                                </button>
+
+                                {% if item.image_url %}
+                                    <label class="remove-image-label">
+                                        <input
+                                            type="checkbox"
+                                            id="remove-image"
+                                            name="remove_image"
+                                            value="true"
+                                        >
+                                        Remove current photo
+                                    </label>
+                                {% endif %}
+
+                            </div>
+                        </div>
+                    </section>
+
+                    <section>
+                        <h3 class="form-section-heading">
+                            Private notes
+                        </h3>
+
+                        <div class="form-field">
+                            <label for="notes">Notes for yourself</label>
+
+                            <textarea
+                                id="notes"
+                                name="notes"
+                                rows="3"
+                                placeholder="Add anything you want to remember..."
+                            >{{ item.notes or '' }}</textarea>
+
+                            <span class="field-hint">
+                                These notes are for your own reference.
+                            </span>
+                        </div>
+                    </section>
+
+                    <div class="form-actions">
+                        <a
+                            href="{{ url_for('items.inventory') }}"
+                            class="form-cancel-button"
+                        >
+                            Cancel
+                        </a>
+
+                        <button
+                            type="submit"
+                            class="form-save-button"
+                            id="save-item"
+                        >
+                            Save changes
+                        </button>
+                    </div>
+
+                </form>
+            </section>
+
+            <footer class="dashboard-footer" style="margin-top: 35px;">
+                <span>Okrika-Rack</span>
+                <span>Built for smarter thrift selling.</span>
+            </footer>
+
+        </main>
+    </div>
 
     <script>
         const imageInput = document.getElementById("image");
@@ -264,6 +716,10 @@
         const status = document.getElementById("image-status");
         const cancelButton = document.getElementById("cancel-image");
         const currentImage = document.getElementById("current-image");
+        const currentImageContainer = document.getElementById(
+            "current-image-container"
+        );
+        const noCurrentImage = document.getElementById("no-current-image");
         const removeCheckbox = document.getElementById("remove-image");
         const form = document.getElementById("edit-item-form");
         const saveButton = document.getElementById("save-item");
@@ -332,6 +788,11 @@
 
                 const context = canvas.getContext("2d");
 
+                if (!context) {
+                    bitmap.close();
+                    throw new Error("Could not prepare the image.");
+                }
+
                 context.drawImage(
                     bitmap,
                     0,
@@ -364,8 +825,10 @@
 
             } catch (error) {
                 console.error(error);
+
                 status.textContent =
                     "Could not prepare this image. Please try another.";
+
                 compressedImage = null;
             }
         });
@@ -378,10 +841,13 @@
 
         if (removeCheckbox) {
             removeCheckbox.addEventListener("change", function () {
-                if (this.checked && currentImage) {
-                    currentImage.style.opacity = "0.35";
-                } else if (currentImage) {
-                    currentImage.style.opacity = "1";
+                if (currentImage) {
+                    currentImage.style.opacity = this.checked ? "0.35" : "1";
+                }
+
+                if (currentImageContainer) {
+                    currentImageContainer.style.opacity =
+                        this.checked ? "0.65" : "1";
                 }
             });
         }
@@ -389,6 +855,7 @@
         form.addEventListener("submit", function (event) {
             if (imageInput.files.length > 0 && !compressedImage) {
                 event.preventDefault();
+
                 alert("Please wait for image preparation to finish.");
                 return;
             }
@@ -403,5 +870,6 @@
             saveButton.textContent = "Saving changes...";
         });
     </script>
+
 </body>
 </html>
