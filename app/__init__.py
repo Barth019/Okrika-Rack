@@ -11,6 +11,7 @@ from app.models import db, BufferConnection, Seller
 from app.auth import auth_bp
 from app.accounts import accounts_bp
 from app.scheduler import scheduler_bp
+from app.config_validation import validate_production_config
 
 
 migrate = Migrate()
@@ -24,6 +25,8 @@ def create_app(test_config=None):
 
     if test_config:
         app.config.update(test_config)
+    if app.config.get("APP_ENV") == "production":
+        validate_production_config(app.config)
     cloudinary.config(
         cloud_name=app.config["CLOUDINARY_CLOUD_NAME"],
         api_key=app.config["CLOUDINARY_API_KEY"],
